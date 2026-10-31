@@ -8,11 +8,7 @@ import {
   isPersonaId,
   listPersonas,
 } from '../../src/personas/index.js';
-
-const THEME_WORDS = [
-  'ghost', 'haunt', 'spirit', 'spook', 'poltergeist', 'wraith', 'banshee', 'doppel', 'lich',
-  'revenant', 'changeling', 'possess', 'exorcis', 'seance', 'séance', 'curse', 'undead',
-];
+import { THEME_WORDS } from '../helpers/theme-words.js';
 
 describe('STEP_TYPES', () => {
   it('is the 14-step DSL vocabulary, frozen', () => {
