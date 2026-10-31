@@ -9,9 +9,13 @@ const TAIL_LINES = 20;
 /** How long to wait for the pipes to close after `exit` before giving up on them (KI-19). */
 const CLOSE_GRACE_MS = 100;
 
-/** Redact first, then trim (D-29), so no part of a secret survives at the cut. */
-function tail(output: string, redact: (s: string) => string): string {
-  const kept = redact(output).slice(-MAX_OUTPUT_CHARS);
+/**
+ * Redact first, then trim (D-29), so no part of a secret survives at the cut. Each stream is redacted whole
+ * (so the other stream interleaving can't split a secret), then stdout and stderr are joined and redacted
+ * again (so a secret split across the two streams is caught too).
+ */
+function tail(out: { stdout: string; stderr: string }, redact: (s: string) => string): string {
+  const kept = redact(redact(out.stdout) + redact(out.stderr)).slice(-MAX_OUTPUT_CHARS);
   return kept.trimEnd().split(/\r?\n/).slice(-TAIL_LINES).join('\n');
 }
 
@@ -31,7 +35,7 @@ export function runReset(
   const started = Date.now();
 
   return new Promise<ResetResult | null>((resolve, reject) => {
-    let output = '';
+    const output = { stdout: '', stderr: '' };
     let settled = false;
     const child = spawn(command, {
       shell: true,
@@ -40,11 +44,9 @@ export function runReset(
       detached: true,
       stdio: ['ignore', 'pipe', 'pipe'],
     });
-    const collect = (chunk: Buffer) => {
-      output += chunk.toString('utf8');
-    };
-    child.stdout.on('data', collect);
-    child.stderr.on('data', collect);
+    // setEncoding decodes across chunk boundaries, so a multibyte secret is never split into U+FFFD.
+    child.stdout.setEncoding('utf8').on('data', (chunk: string) => (output.stdout += chunk));
+    child.stderr.setEncoding('utf8').on('data', (chunk: string) => (output.stderr += chunk));
 
     const settle = (fn: () => void) => {
       if (settled) return;

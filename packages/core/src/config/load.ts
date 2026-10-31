@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { effectiveHosts, isAllowedHost } from '../safety/allowlist.js';
 import { ConfigError, type ConfigIssue } from './errors.js';
-import { Redactor } from './redact.js';
+import { REDACTED, Redactor } from './redact.js';
 import { ConfigSchema, type AccountConfig, type Config } from './schema.js';
 
 export type ConfigWarning = { code: 'literal-password' | 'unresolved-secret'; path: string; message: string };
@@ -10,7 +10,7 @@ export type ConfigWarning = { code: 'literal-password' | 'unresolved-secret'; pa
 export type LoadedConfig = {
   /** Defaults applied, passwords resolved, unusable unused accounts removed (D-29). */
   config: Config;
-  /** The JSON as written, with `env:NAME` kept, for `run.json`. Never contains resolved secrets. */
+  /** The JSON as written, for `run.json`: `env:NAME` kept, literal passwords replaced with `[REDACTED]`. */
   snapshot: unknown;
   configPath: string;
   configDir: string;
@@ -43,6 +43,15 @@ function rawSecrets(input: unknown, env: NodeJS.ProcessEnv): string[] {
     if (secret) secrets.push(secret);
   }
   return secrets;
+}
+
+/** A deep copy of the input with literal passwords replaced; `env:NAME` references are kept (design §9). */
+function redactLiteralPasswords(input: unknown): unknown {
+  const copy = structuredClone(input) as { accounts?: Record<string, { password?: unknown }> };
+  for (const account of Object.values(copy.accounts ?? {})) {
+    if (typeof account?.password === 'string' && !ENV_REF.test(account.password)) account.password = REDACTED;
+  }
+  return copy;
 }
 
 function usedAccounts(config: Config): Set<string> {
@@ -98,7 +107,7 @@ export function parseConfig(input: unknown, opts: { configPath: string; env?: No
   const configPath = opts.configPath;
   return {
     config: { ...config, accounts },
-    snapshot: input,
+    snapshot: redactLiteralPasswords(input),
     configPath,
     configDir: dirname(configPath),
     allowedHosts,
@@ -106,6 +115,14 @@ export function parseConfig(input: unknown, opts: { configPath: string; env?: No
     warnings: warnings.map((w) => ({ ...w, message: redactor.redact(w.message) })),
     env,
   };
+}
+
+/** Where V8 says the JSON broke, from the numbers in its message only (never its quoted source text). */
+function jsonErrorLocation(message: string): string {
+  const lineCol = /line (\d+) column (\d+)/.exec(message);
+  if (lineCol) return ` at line ${lineCol[1]}, column ${lineCol[2]}`;
+  const position = /position (\d+)/.exec(message);
+  return position ? ` at position ${position[1]}` : '';
 }
 
 /** Reads `--config` or `./poltergeist.config.json` and validates it. Throws `ConfigError` (exit code 2). */
@@ -123,8 +140,9 @@ export async function loadConfig(
   let input: unknown;
   try {
     input = JSON.parse(text);
-  } catch (cause) {
-    throw new ConfigError([{ path: '', message: `invalid JSON in ${configPath}: ${(cause as Error).message}` }], { cause });
+  } catch (e) {
+    // V8's message quotes the source around the error, which may be an unquoted password: never echo it.
+    throw new ConfigError([{ path: '', message: `invalid JSON in ${configPath}${jsonErrorLocation((e as Error).message)}` }]);
   }
   return parseConfig(input, { configPath, env: opts.env });
 }

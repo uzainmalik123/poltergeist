@@ -53,6 +53,22 @@ describe('runReset', () => {
     expect(out).not.toContain('ter22');
   });
 
+  it('redacts a multibyte secret that straddles a pipe chunk boundary', async () => {
+    const secret = 'pässwörd-ünïcode-sécret';
+    const l = await loaded(js(`process.stdout.write('p'.repeat(65513)+${JSON.stringify(secret)}+'\\n')`), { secrets: [secret] });
+    const out = (await runReset(l))?.outputTail ?? '';
+    expect(out).toContain('[REDACTED]');
+    expect(out).not.toMatch(/ünïcode|sécret/);
+  });
+
+  it('redacts a secret on one stream even when the other stream interleaves', async () => {
+    const code = "process.stdout.write('hunt');setTimeout(()=>process.stderr.write('warn\\n'),20);setTimeout(()=>process.stdout.write('er22\\n'),40)";
+    const out = (await runReset(await loaded(js(code), { secrets: ['hunter22'] })))?.outputTail ?? '';
+    expect(out).toContain('[REDACTED]');
+    expect(out).not.toMatch(/hunt|er22/);
+    expect(out).toContain('warn');
+  });
+
   it('keeps the last 20 lines', async () => {
     const l = await loaded(js("let s='x'.repeat(70000)+'\\n';for(let i=0;i<25;i++)s+='L'+i+'\\n';process.stdout.write(s)"));
     const lines = Array.from({ length: 20 }, (_, i) => `L${i + 5}`);

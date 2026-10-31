@@ -112,6 +112,22 @@ describe('loadConfig', () => {
     expect(err.message).toContain('invalid JSON');
   });
 
+  it('never echoes source text in a JSON error', async () => {
+    const err = await loadError('{"accounts":{"a":{"password":hunter2secretvalue}}}');
+    expect(err.message).toContain('invalid JSON');
+    expect(err.message).not.toMatch(/hunter|secret|password/);
+  });
+
+  it('redacts literal passwords in the snapshot and leaves env references', async () => {
+    const raw = { ...base, accounts: { ...base.accounts, spare: { ...account, password: 'candy' } } };
+    const dir = await writeConfig(raw);
+    const loaded = await loadConfig({ cwd: dir, env });
+    const snap = loaded.snapshot as typeof raw;
+    expect(snap.accounts.spare.password).toBe('[REDACTED]');
+    expect(snap.accounts.default.password).toBe('env:POLTERGEIST_PW');
+    expect(JSON.stringify(snap)).not.toContain('candy');
+  });
+
   it('resolves a relative --config path against cwd and uses its directory', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'pg-config-'));
     await mkdir(join(dir, 'sub'));
