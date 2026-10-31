@@ -13,7 +13,7 @@ Work happens one PRD feature at a time, through the grill → plan → implement
   - _Requirements: none in this spec (it has its own)_
 - [ ] 4. F03 Route Scout (tested against Candy Swap directly)
   - _Requirements: 3.1–3.7_
-- [ ] 5. F04 Core Personas & Input Generators
+- [x] 5. F04 Core Personas & Input Generators
   - _Requirements: 4.1, 4.2_
 - [ ] 6. KI-01 spike: compile and run 5 criteria × 3 personas against Candy Swap
   - _Requirements: 5.1–5.6 (spike only)_

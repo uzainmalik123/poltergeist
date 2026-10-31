@@ -36,6 +36,7 @@
 | D-28 | `main` is protected by a GitHub ruleset: changes land only through PRs with a green `health` check | Accepted |
 | D-27 | Spec Reader edge-case rulings and API (F01, extends D-16): `parseSpec`/`parseRequirements`, warning codes, KI-16 edge cases | Accepted |
 | D-29 | F02 rebuild rulings (extends D-17, D-18, D-22): KI-21 folded in, internal bypass list, decoded `forbidden` paths, userinfo targets rejected, unresolved unused accounts dropped, reset resolves on `exit` | Accepted |
+| D-30 | F04 persona and generator rulings: registry-derived ids, sprite reference, plain-QA `behaviour`, `STEP_TYPES` in F04, eight generators incl. `plain`, uint32 seed/index, BLNS minus injection sections | Accepted |
 
 ---
 
@@ -318,3 +319,16 @@
   - **Layout:** `packages/core/src/config/` (schema, errors, load, redact, reset) and `packages/core/src/safety/` (allowlist, forbidden, guard, limiter). Browser tests use a local `node:http` fixture and never touch the internet. CI installs Chromium. `npm run test:guard:1cpu` runs the guard tests pinned to one CPU (Done-when), outside `health`.
   - **Left to F06:** worker WebSockets and `about:blank` popups (KI-18).
 - **Consequences:** KI-19, KI-20 and KI-21 are resolved by F02; KI-17 stays open for redirect hops only. F06 can rely on `LoadedConfig.accounts` containing only usable accounts.
+
+### D-30: F04 persona and generator rulings (extends D-04, D-13)
+- **Context:** grilling F04 (2026-10-31). The user asked to accept the recommended answers.
+- **Decision:**
+  - **Ids:** `PersonaId` comes from the registry (`wraith`, `banshee`, `doppelganger` today). F16 and F20 add entries; no id exists without a definition. Unknown ids (including `__proto__`, `toString`, wrong case) throw `UnknownPersonaError` / `UnknownGeneratorError`.
+  - **Fields:** `name` and `tagline` are UI copy and may be themed. `behaviour` and each generator's `description` go into prompts, so they use plain QA wording; a test fails on theme words (D-09). `sprite` is a string key the Costume Kit resolves (today the persona id). F26 owns the art.
+  - **Step vocabulary:** `STEP_TYPES` (the 14 steps of design §6) lives in `core/personas`. F05 builds its DSL zod enum from it.
+  - **Generators:** `plain`, `naughty`, `emoji`, `rtl`, `long` (exactly 10,000 chars), `empty`, `whitespace`, `fastcheck` (fast-check 4.10.2, `string({unit:'grapheme', maxLength:64})`). `plain` is new: short ordinary alphanumeric values, so personas that need *valid* input still don't take values from the LLM.
+  - **Determinism:** `generate(id, seed, index)` with seed and index uint32, otherwise `RangeError`. List generators pick `list[(mix32(seed) % n + index % n) % n]` (murmur3 fmix32), so consecutive indices don't repeat until the list wraps. A committed vitest snapshot (8 generators × 3 seeds × 5 indices) fails on any drift, including dependency bumps.
+  - **Naughty strings:** BLNS `blns.txt` is vendored verbatim at commit `db33ec7` with its MIT licence (`src/personas/generators/data/`). Nine sections are excluded as exploit payloads (Script, SQL, Server Code, Command (Ruby) and XXE injection, File Inclusion, Known CVEs, Terminal escape codes, iOS Vulnerabilities), per D-08 and the scrapped F25. 243 strings remain.
+  - **Allocations:** Wraith `goto click dblclick fill press back reload wait` + `plain`, 1 actor. Banshee `goto click fill press wait` + all generators except `plain`, 1 actor. Doppelgänger `goto click fill press reload wait barrier holdRequests releaseRequests` + `plain`, 2 actors. `throttle`, `login` and `logout` are left to F16.
+  - **Data:** all persona and generator data is deep-frozen.
+- **Consequences:** F05 imports `STEP_TYPES`, `PERSONA_IDS` and `GENERATOR_IDS` for its schema and shows `behaviour` and descriptions in the prompt. Whether DSL `literal` inputs survive is open (KI-30). Steering flags (Req 4.3) remain F17.

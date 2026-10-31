@@ -38,6 +38,7 @@
 | KI-27 | Poltergeist could look too similar to Reanimator (same team circle, same dither technique) | Minor | F26, D-24 | Open |
 | KI-28 | `npm audit` reports 11 moderate issues in dev-only lint tooling (minimatch, via eslint and typescript-eslint) | Minor | none (dev only) | Open |
 | KI-29 | F02 rebuild review minors: WebRTC iframe layer, dead-port reuse, provider keys in reset env, unbounded reset buffer, non-canonical IPv6 entries, terse missing-file message, guard tests that could reach the internet on regression | Minor | F06 | Open |
+| KI-30 | Valid form fills may need typed inputs (numbers, emails, dates); DSL `literal` input vs D-04 unresolved | Minor | F05, KI-01 spike | Open |
 
 ---
 
@@ -310,3 +311,8 @@
 - **Loader:** the missing-file message (`cannot read <path>: ENOENT`) could suggest `--config` or creating `poltergeist.config.json`.
 - **Tests:** the guard tests use `example.com`, which `--host-resolver-rules=MAP *.test` doesn't cover. If the guard regressed, they would reach the real internet. Use `evil.test` instead.
 - **Next action:** pick these up when F06 starts consuming the guard and `runReset`.
+
+### KI-30: Typed inputs and DSL `literal` · Minor · Open
+- **Context:** F04 (D-30) added a `plain` generator for ordinary valid values. Forms that need a number, email or date can't be filled validly by any generator yet. The DSL in design §6 also allows `input:{literal}`, which lets the LLM write a value and sits awkwardly with D-04.
+- **Blocks:** F05 (schema) and the KI-01 spike (it may show plans needing typed values).
+- **Next action:** in the spike, count how often a plan needed a typed value or used a literal. Then decide in F05 whether to add typed generators (`number`, `email`, `date`) or keep a restricted `literal`, and record a D-xx.

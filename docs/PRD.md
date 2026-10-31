@@ -21,7 +21,7 @@
 | 2 | F02 | Target Config & Safety Allowlist | High | Done | 0 |
 | 3 | F10 | Candy Swap Demo Target (built in Kiro) | High | TBD | F01 (to check its spec) |
 | 4 | F03 | Route Scout | High | TBD | F02, F10 |
-| 5 | F04 | Core Personas & Input Generators | High | TBD | n/a |
+| 5 | F04 | Core Personas & Input Generators | High | Done | n/a |
 | 6 | n/a | **KI-01 spike** (compile + run 5 criteria × 3 personas) | High | TBD | F01, F03, F04 |
 | 7 | F05 | Ghost Compiler (LLM → Plan DSL) | High | TBD | spike |
 | 8 | F06 | Ghost Runner | High | TBD | F02, F05 |
@@ -158,7 +158,7 @@
 - **Prototype lessons:** [LESSONS.md § F03](LESSONS.md#f03-route-scout).
 - **Done when:** scouting **the real Candy Swap** lists the "Claim" buttons and trade-form fields by role and name, with every emitted label and testId resolving. Unlike the prototype, no stand-in fixture app is needed, because F10 comes first.
 
-### F04: Core Personas & Input Generators · High · TBD
+### F04: Core Personas & Input Generators · High · Done
 
 **Owns:** persona definitions for **Wraith, Banshee and Doppelgänger** (behaviour text, allowed steps, generators, actor count, sprite reference), plus the deterministic input generators (naughty strings, emoji, RTL, long, empty, whitespace, fast-check with a fixed seed). Implements Requirement 4.1–4.2.
 **Not this feature:** Lich and Revenant (F16) · Changeling (F20) · steering overrides (F17) · drawing the sprites (F26).
@@ -450,3 +450,4 @@ Implements Requirement 12.
   - Prototype lessons linked for F01–F03.
 - 2026-10-31: **F01 Done** (D-27). **Scaffold Done**: CI is green on GitHub Actions (PR #1).
 - 2026-10-31: **F02 Done** (D-29). CI now installs Chromium for the guard tests.
+- 2026-10-31: **F04 Done** (D-30). Three core personas, eight deterministic generators (adds `plain`), vendored BLNS without injection sections. KI-30 opened (typed inputs).
