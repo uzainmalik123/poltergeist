@@ -33,6 +33,7 @@
 | D-24 | The costume is a "haunted terminal": ASCII glyphs via Bayer dither, ectoplasm green for ghosts only, distinct from Reanimator | Accepted |
 | D-25 | Fresh start: new repo inside the hacking window, rebuilt from docs (no ported code), real `.kiro/` spec, new build order | Accepted |
 | D-26 | Costume Kit is its own package and a High feature (F26); possession/exorcism move there from F22 | Accepted |
+| D-28 | `main` is protected by a GitHub ruleset: changes land only through PRs with a green `health` check | Accepted |
 | D-27 | Spec Reader edge-case rulings and API (F01, extends D-16): `parseSpec`/`parseRequirements`, warning codes, KI-16 edge cases | Accepted |
 
 ---
@@ -290,3 +291,15 @@
   - **Blockquoted specs** are not supported. Lists inside a blockquote are not criteria, so the requirement gets a `no-criteria` warning.
   - The scaffold (build order 0) is delivered in the same cycle as F01, as the first tasks of its plan.
 - **Consequences:** this resolves the deferred minors in KI-16. KI-16 itself stays open until a fresh Kiro-generated spec is added as a fixture (F10).
+
+### D-28: `main` is protected by a ruleset; everything lands through PRs
+- **Context:** GitHub flagged `main` as unprotected after the first PR (2026-10-31). The user asked for a ruleset set up with `gh api`.
+- **Decision:** the repository ruleset "Protect main" (id 26265302) targets the default branch.
+  - It blocks deletion and force pushes.
+  - It requires a pull request with 0 approvals (a solo maintainer can't approve their own PR).
+  - It requires the `health` check from GitHub Actions to pass on an up-to-date branch.
+  - Repository admins can bypass it, but only through a pull request.
+- **Consequences:**
+  - Sessions never push to `main`. They push a feature branch and open a PR, and CI's `health` must be green before merging (this enforces D-19).
+  - Raise the required approvals to 1 if teammates join.
+  - If the CI job is renamed, update the required check in the ruleset in the same change.
