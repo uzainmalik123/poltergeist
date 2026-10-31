@@ -36,6 +36,7 @@
 | KI-25 | Glyph rendering of 12 live tiles at 4 fps may be too slow in the browser | Minor | F26, F12 | Open |
 | KI-26 | Fine ASCII glyphs may turn to mush after YouTube compression | Major | F26, video | Open |
 | KI-27 | Poltergeist could look too similar to Reanimator (same team circle, same dither technique) | Minor | F26, D-24 | Open |
+| KI-28 | `npm audit` reports 11 moderate issues in dev-only lint tooling (minimatch, via eslint and typescript-eslint) | Minor | none (dev only) | Open |
 
 ---
 
@@ -167,6 +168,13 @@
 - **Blocks:** F01's robustness on real user specs.
 - **Next action:** generate a fresh spec with Kiro (main project, or Candy Swap in F10) and add it as an F01 fixture. If it uses bullets or explicit IDs, add a decision that extends D-16.
 - **Notes (2026-10-30, F01 done):** the parser reports layouts it can't read as warnings instead of dropping them silently: `no-criteria` (e.g. bulleted criteria), `ignored-list` (a second numbered list), `unrecognized-heading` (`Requirement #3`) and `empty-spec`. Deferred minors from the review: suffixes after 26 duplicate requirement numbers; `Requirement 1a` parsing as 1; code blocks and tables inside a criterion not hashed; `IF-Match` read as IF; a lowercase `the` subject not split when there's no comma; specs inside a blockquote.
+- **Notes (2026-10-31, F01 rebuild review): deferred minors.**
+  - An ordered list under a non-AC sub-heading (e.g. `#### Notes`) *before* `#### Acceptance Criteria` is taken as the criteria, and the real list gets `ignored-list`.
+  - `Requirement 03` isn't normalized to `3`, and isn't flagged as a duplicate of `3`.
+  - In fallback mode (no `Requirement N` headings), a requirement can be titled "Acceptance Criteria".
+  - Inline HTML (`<br>`) is kept verbatim in the criterion text.
+  - Test nits: `read.test.ts` leaves a temp folder behind; the perf test is wall-clock.
+- **Notes (2026-10-31, F01 rebuild grill):** all the deferred minors above are ruled on in D-27. The issue stays open until a real Kiro-generated spec (Candy Swap, F10) is added as a fixture.
 
 
 ### KI-17: Forbidden rules only check the first request of a redirect chain · Minor · Open
@@ -277,3 +285,8 @@
 - **Mitigation:** D-24's differences: characters instead of dots, green ghosts instead of purple magic, a terminal instead of a cinematic necromancer, and a different typeface. No shared assets.
 - **Next action:** once F26's demo page exists, put screenshots side by side with Reanimator's prototypes and check they read as different.
 
+
+### KI-28: Moderate `npm audit` findings in dev-only lint tooling · Minor · Open
+- **Problem:** `npm audit` (2026-10-31, scaffold) reports 11 moderate issues, all from `minimatch` pulled in by `eslint` 9.39.1 and `typescript-eslint` 8.72.1. None of them ship in `@poltergeist/core`'s runtime dependencies.
+- **Blocks:** nothing. It's lint tooling only, and isn't run on untrusted input.
+- **Next action:** before submission, check whether newer eslint or typescript-eslint patch releases fix it. Bump the pins in STACK.md if so. Don't use `npm audit fix --force`.

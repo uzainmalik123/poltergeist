@@ -16,8 +16,8 @@
 
 | Build order | ID | Feature | Priority | Status | Depends on |
 |---|---|---|---|---|---|
-| 0 | n/a | Scaffold: monorepo, health gate, CI (D-19) | High | TBD | n/a |
-| 1 | F01 | Spec Reader | High | TBD | 0 |
+| 0 | n/a | Scaffold: monorepo, health gate, CI (D-19) | High | Done | n/a |
+| 1 | F01 | Spec Reader | High | Done | 0 |
 | 2 | F02 | Target Config & Safety Allowlist | High | TBD | 0 |
 | 3 | F10 | Candy Swap Demo Target (built in Kiro) | High | TBD | F01 (to check its spec) |
 | 4 | F03 | Route Scout | High | TBD | F02, F10 |
@@ -61,7 +61,9 @@
 
 ## HIGH
 
-### Scaffold (build order 0) · High · TBD
+### Scaffold (build order 0) · High · Done
+
+> 2026-10-31: done. Built with F01 (PR #1). `npm run health` is green locally and on GitHub Actions.
 
 **Owns:** root `package.json` (npm workspaces, Node ≥ 22, ESM), `tsconfig.base.json`, ESLint flat config, Vitest config, `npm run health` (typecheck + lint + test), `.github/workflows/ci.yml`, and an empty `packages/core`.
 **Not this feature:** any product code.
@@ -73,7 +75,9 @@
   - No secrets in CI.
 - **Done when:** `npm run health` passes locally and on GitHub Actions for a trivial test.
 
-### F01: Spec Reader · High · TBD
+### F01: Spec Reader · High · Done
+
+> 2026-10-31: done. Plan `docs/plans/2026-10-31-F01-spec-reader.md`, rulings in D-27. All four Done-when fixtures pass, IDs are stable across re-parses, and 200 criteria parse in < 200 ms. Deferred review minors are in KI-16.
 
 **Owns:** reading `requirements.md` and producing `Criterion[]` (IDs, EARS clauses, hashes, warnings). Implements Requirement 1.
 **Not this feature:** choosing which criteria to run (F09 `--only`) · writing reports (F08).
@@ -442,3 +446,4 @@ Implements Requirement 12.
   - **F26 Costume Kit added** (High), since the target is now Costume Contest (D-23).
   - Possession and exorcism moved from F22 to F26.
   - Prototype lessons linked for F01–F03.
+- 2026-10-31: **F01 Done** (D-27). **Scaffold Done**: CI is green on GitHub Actions (PR #1).

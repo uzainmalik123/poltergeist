@@ -2,10 +2,10 @@
 
 Work happens one PRD feature at a time, through the grill → plan → implement → review cycle in `AGENTS.md`. Each feature's detailed task plan is written to `docs/plans/` when that feature is planned. This list is the order. Tick a box only when the feature's "Done when" in `docs/PRD.md` passes and `npm run health` is green.
 
-- [ ] 0. Scaffold the monorepo, the health gate and CI (D-19)
+- [x] 0. Scaffold the monorepo, the health gate and CI (D-19)
   - npm workspaces, TypeScript, ESLint, Vitest, `npm run health`, `.github/workflows/ci.yml`
   - _Requirements: none (infrastructure)_
-- [ ] 1. F01 Spec Reader
+- [x] 1. F01 Spec Reader
   - _Requirements: 1.1–1.8_
 - [ ] 2. F02 Target Config & Safety
   - _Requirements: 2.1–2.8_
