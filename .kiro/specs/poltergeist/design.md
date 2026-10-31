@@ -64,7 +64,7 @@ fixtures/candy-swap/ demo target app + its own .kiro/specs/candy-swap/ (built in
 }
 ```
 
-Relative paths resolve from the config file's directory. A bad config throws `ConfigError` (field-path issues, `exitCode: 2`).
+Relative paths resolve from the config file's directory. A bad config throws `ConfigError` (field-path issues, `exitCode: 2`). `target` may not contain userinfo. An unused account whose `env:NAME` is unset is dropped with a warning (D-29). `resetCommand` runs through the shell in the config's directory. It must not start long-lived servers: `runReset` resolves when the command exits (D-29).
 
 ## 4. Data model (abridged)
 
@@ -92,6 +92,7 @@ Every browser Poltergeist launches goes through one path:
    - The same error on an allowlisted original request (Chromium hides the hop under load) → `redirect`.
    - Anything else unconfirmed → `leak`, which F06 treats as a safety failure.
 5. The guard aborts first, then calls `onBlocked`. A throwing callback is swallowed.
+6. The bypass-list builder is internal and re-validates every host. `forbidden` paths are percent-decoded before matching (D-29).
 
 ## 6. Haunting Plan DSL (the LLM's output contract)
 

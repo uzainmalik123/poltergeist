@@ -25,11 +25,11 @@
 | KI-14 | LLM cost and rate limits during development | Minor | F05 | Open |
 | KI-15 | Code written in this playtest repo may not count for the main submission | Major | everything | Resolved (2026-10-31, D-25) |
 | KI-16 | Current Kiro-generated `requirements.md` layout is only verified against one hand-edited sample | Minor | F01 | Open |
-| KI-17 | Forbidden rules only check the first request of a redirect chain; matching uses the raw (percent-encoded, case-sensitive) pathname | Minor | F02, F17 | Open |
+| KI-17 | Forbidden rules only check the first request of a redirect chain; matching uses the raw (percent-encoded, case-sensitive) pathname | Minor | F02, F17 | Open (path decoding fixed in F02; redirect hops open for F17) |
 | KI-18 | Guard reporting gaps that stay on the machine or are still blocked | Minor | F06 | Open |
-| KI-19 | A `resetCommand` that backgrounds a long-lived child keeps the pipes open, so reset times out and kills it | Minor | F06 | Open |
-| KI-20 | An unused account with an unset `env:NAME` password keeps the literal `env:NAME` string as its password | Minor | F03, F06 | Open |
-| KI-21 | F02 deferred review minors: hardening and test gaps in config, reset and guard | Minor | F02, F06 | Open (fold into the F02 rebuild) |
+| KI-19 | A `resetCommand` that backgrounds a long-lived child keeps the pipes open, so reset times out and kills it | Minor | F06 | Resolved (2026-10-31, D-29) |
+| KI-20 | An unused account with an unset `env:NAME` password keeps the literal `env:NAME` string as its password | Minor | F03, F06 | Resolved (2026-10-31, D-29) |
+| KI-21 | F02 deferred review minors: hardening and test gaps in config, reset and guard | Minor | F02, F06 | Resolved (2026-10-31, D-29); deferred minors in KI-29 |
 | KI-22 | F03 deferred review minors: login heuristic, redaction and capture hardening, test gaps | Minor | F05, F06 | Open (fold into the F03 rebuild) |
 | KI-23 | Under load, Chromium sometimes reports a stopped redirect hop only as a failure of the original request, so the guard missed it (CI red) | Major | F02, CI (D-19) | Resolved in prototype (D-22); build it in from the start |
 | KI-24 | Eligibility: the idea was prototyped before the window; how to present the rebuild honestly | Major | submission | Open |
@@ -37,6 +37,7 @@
 | KI-26 | Fine ASCII glyphs may turn to mush after YouTube compression | Major | F26, video | Open |
 | KI-27 | Poltergeist could look too similar to Reanimator (same team circle, same dither technique) | Minor | F26, D-24 | Open |
 | KI-28 | `npm audit` reports 11 moderate issues in dev-only lint tooling (minimatch, via eslint and typescript-eslint) | Minor | none (dev only) | Open |
+| KI-29 | F02 rebuild review minors: WebRTC iframe layer, dead-port reuse, provider keys in reset env, unbounded reset buffer, non-canonical IPv6 entries, terse missing-file message, guard tests that could reach the internet on regression | Minor | F06 | Open |
 
 ---
 
@@ -181,6 +182,7 @@
 - **Problem:** a 307/308 to a forbidden path on an allowed host isn't blocked, because only the first request of a chain is matched. Matching also uses the raw (percent-encoded, case-sensitive) pathname, so `/api/%61dmin` slips past a rule for `/api/admin*`.
 - **Blocks:** F02's completeness and F17 (steering rules).
 - **Next action:** decode the path once before matching, and consider the proxy/`requestfailed` path for redirect hops. Revisit when F17 lands.
+- **2026-10-31 (F02 rebuild, D-29):** the pathname is now percent-decoded once before matching (bad encodings fall back to the raw path), so `/api/%61dmin` matches `/api/admin*`. The final review confirmed a 307 from an allowlisted path to a forbidden one still goes through unreported. That half stays open for F17.
 
 ### KI-18: Guard reporting gaps that stay on the machine or are still blocked · Minor · Open
 - **Problem:**
@@ -191,20 +193,23 @@
   - The per-context proxy is only verified on Linux Chromium.
 - **Blocks:** F06 (runner robustness and block reporting).
 - **Next action:** F06 adds a step timeout and reports worker websockets via page/worker events if needed. Do the cross-platform check before the demo.
+- **2026-10-31 (F02 rebuild review):** a same-origin `about:blank` iframe's `contentWindow.RTCPeerConnection` escapes the init script. The launch flag and the dead proxy are still the backstop, so this is a lost layer, not a known leak. WebTransport (HTTP/3 over UDP) and DNS prefetch/preconnect behind the dead proxy are unverified. Check all three in F06.
 
-### KI-19: A `resetCommand` that backgrounds a long-lived child keeps the pipes open · Minor · Open
+### KI-19: A `resetCommand` that backgrounds a long-lived child keeps the pipes open · Minor · Resolved
 - **Problem:** a reset command such as `npm run dev &` leaves a child holding stdout/stderr. `runReset` waits for `close`, so it reports `timeout`, and the process-group SIGKILL then kills the user's server.
 - **Blocks:** F06 (reset between repetitions).
 - **Next action:** decide in F06 whether to resolve on `exit` and detach the pipes, or document that `resetCommand` must not start servers.
+- **Resolved (2026-10-31, F02 rebuild, D-29):** `runReset` resolves on `exit`, waits up to 100 ms for the pipes to close, then destroys them. It kills the process group only on timeout. Tested with `cmd & echo ok`. `resetCommand` must not start servers (design §3).
 
-### KI-20: An unused account with an unset `env:NAME` password keeps the literal `env:NAME` string · Minor · Open
+### KI-20: An unused account with an unset `env:NAME` password keeps the literal `env:NAME` string · Minor · Resolved
 - **Problem:** `loadConfig` only fails on a missing env var for accounts that a route uses. An unused account keeps `env:NAME` as its password in `LoadedConfig`, so a later login step (F03/F06, e.g. Revenant `login {account}`) could silently log in with that string.
 - **Blocks:** F03, F06 (login steps that reference accounts).
 - **Next action:** when login steps reference accounts, validate and resolve the referenced accounts the same way routes do.
 - **2026-10-30 (F03):** Scout only logs in to accounts that routes use, and `loadConfig` already resolves those. Scout also refuses any password still shaped like `env:NAME` with an unset variable. Still open for F06's `login {account}` step.
 - **2026-10-30 (F03 done):** Scout's pre-check is done (`ConfigError` for an unset env password on a route-used account). F06's `login {account}` is still open.
+- **Resolved (2026-10-31, F02 rebuild, D-29):** `loadConfig` drops an unused account whose `env:NAME` is unset or empty and adds an `unresolved-secret` warning. `LoadedConfig.accounts` only holds usable accounts, so F06's `login {account}` can't log in with a literal `env:NAME`.
 
-### KI-21: F02 deferred review minors · Minor · Open
+### KI-21: F02 deferred review minors · Minor · Resolved
 - **Context:** F02's task reviews and final review (2026-10-30) left these minor items. None lets traffic leave the machine, and the serious ones are already KI-17 to KI-20.
 - **Hardening:**
   - Reset output is cut to the last 64 KB *before* redaction, so part of a secret can survive at the cut (`config/reset.ts`). Redact first, then trim.
@@ -222,6 +227,7 @@
   - Untested: IPv4 and `::1` entries in `allowedHosts`; bounds on `reps` and `resetTimeoutMs`; empty `resetCommand`; strictness inside nested objects; a route naming a missing account; a short or common-word literal password; `loadConfig` with an empty env var; userinfo-spoofed (`http://localhost@evil.com`) and trailing-dot targets; the reset 64 KB trim, 20-line tail and `spawn` failure; first-match-wins and lowercase methods in `forbidden`; a limiter task that throws synchronously; a guard test with a non-empty `allowedHosts`.
   - The secret-in-reset-output test uses a literal `echo pw=hunter22`, not `$POLTERGEIST_PW` through the environment.
 - **Next action:** pick up the hardening items when F06 starts consuming the guard and `runReset`. Add the tests opportunistically when touching each module.
+- **Resolved (2026-10-31, F02 rebuild, D-29):** every hardening item and test gap above was built in the first pass. The bypass builder is internal and re-validates entries, IPv6 uses `net.isIPv6`, and `BlockedRequest.errorText` is set on failure-classified blocks. The final review's minors are in KI-29.
 
 ### KI-22: F03 deferred review minors · Minor · Open
 - **Context:** F03's task reviews and final review (2026-10-30) left these minor items. The serious ones were fixed before merge (see D-21).
@@ -246,6 +252,7 @@
   - Login: the deadline path, the SPA success branch with no password field, a reason that never contains the password, fixture `close()` with a `/slow` request open, and `locateTarget` ignoring the login result.
   - The `page could not be reopened` branch is untested. The `/huge` end-to-end assertion is loosened (the budget is proven by unit and `/cards` tests). The `vi.mock` factory reads a module-level `pagesSeen` (fragile).
 - **Next action:** pick up the login and redaction items when F06 starts using Scout's output, and the rest opportunistically.
+- **2026-10-31 (F02 rebuild):** targets with userinfo (`http://u:p@host`) are now rejected by the config schema (D-29). The redactor also scrubs percent-encoded secrets. The rest waits for F03's rebuild.
 
 ### KI-23: Under load, Chromium sometimes reports a stopped redirect hop only as a failure of the original request · Major · Resolved
 - **What happened:** the first two CI runs after the F03 merge (41101768063 and 41171915551, 2026-10-30/31) failed in `guard.test.ts` › "EventSource redirect to a third-party host is blocked": `blocked` stayed empty. The page saw `'error'`, so the request was stopped.
@@ -290,3 +297,16 @@
 - **Problem:** `npm audit` (2026-10-31, scaffold) reports 11 moderate issues, all from `minimatch` pulled in by `eslint` 9.39.1 and `typescript-eslint` 8.72.1. None of them ship in `@poltergeist/core`'s runtime dependencies.
 - **Blocks:** nothing. It's lint tooling only, and isn't run on untrusted input.
 - **Next action:** before submission, check whether newer eslint or typescript-eslint patch releases fix it. Bump the pins in STACK.md if so. Don't use `npm audit fix --force`.
+
+### KI-29: F02 rebuild review minors · Minor · Open
+- **Context:** the final review of the F02 rebuild (2026-10-31). Its four Important findings were fixed before merge (JSON errors never echo source text, the config snapshot redacts literal passwords, reset output is decoded per stream and redacted per stream). These minors remain. None lets traffic leave the machine.
+- **Guard:**
+  - The WebRTC init script is bypassed by a same-origin `about:blank` iframe (also noted on KI-18). The launch flag and the dead proxy still block it.
+  - The dead proxy port is reserved, then closed. Another process could later listen on it. Traffic would only leave if that process acted as a proxy. Fix: keep a listener that destroys every connection, owned by the context. Check that Chromium still reports `ERR_PROXY_CONNECTION_FAILED` (D-22 depends on it).
+  - Non-canonical IPv6 entries (`0:0:0:0:0:0:0:1`, `::ffff:127.0.0.1`) pass validation but never match, because the URL parser canonicalises hosts. This fails closed. Canonicalise in `effectiveHosts`.
+- **Reset:**
+  - `runReset` passes the whole env, but the Redactor only knows account passwords. A `set -x` or env dump would put `ANTHROPIC_API_KEY` or `DOPPLER_TOKEN` into `outputTail`. Add known provider keys to the Redactor, or strip them from the reset env.
+  - Output is buffered without a limit before redact-then-trim. Use a ring buffer of 64 KB plus the longest secret.
+- **Loader:** the missing-file message (`cannot read <path>: ENOENT`) could suggest `--config` or creating `poltergeist.config.json`.
+- **Tests:** the guard tests use `example.com`, which `--host-resolver-rules=MAP *.test` doesn't cover. If the guard regressed, they would reach the real internet. Use `evil.test` instead.
+- **Next action:** pick these up when F06 starts consuming the guard and `runReset`.

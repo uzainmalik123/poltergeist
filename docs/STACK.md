@@ -81,8 +81,10 @@ The prototype (2026-10-30) installed and verified these versions. Reuse them unl
 | remark-parse | 11.0.0 | core | yes |
 | mdast-util-to-string | 4.0.0 | core | yes |
 | @types/mdast | 4.0.4 | core dev | yes |
-| zod | 4.6.7 | core | no |
-| playwright-core | 1.64.1 | core | no |
+| zod | 4.6.7 | core | yes |
+| playwright-core | 1.64.1 | core | yes |
+| ws | 8.22.0 | core dev (guard test fixture) | yes |
+| @types/ws | 8.18.2 | core dev | yes |
 
 ## Local setup (target)
 

@@ -12,7 +12,8 @@
     "typecheck": "tsc -p tsconfig.json",
     "lint": "eslint .",
     "test": "vitest run",
-    "health": "npm run typecheck && npm run lint && npm test"
+    "health": "npm run typecheck && npm run lint && npm test",
+    "test:guard:1cpu": "taskset -c 0 vitest run packages/core/test/safety packages/core/test/config"
   },
   "devDependencies": {
     "@eslint/js": "9.39.1",
