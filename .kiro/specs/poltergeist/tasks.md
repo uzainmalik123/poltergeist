@@ -7,7 +7,7 @@ Work happens one PRD feature at a time, through the grill → plan → implement
   - _Requirements: none (infrastructure)_
 - [x] 1. F01 Spec Reader
   - _Requirements: 1.1–1.8_
-- [ ] 2. F02 Target Config & Safety
+- [x] 2. F02 Target Config & Safety
   - _Requirements: 2.1–2.8_
 - [ ] 3. F10 Candy Swap Demo Target (built in Kiro from its own spec)
   - _Requirements: none in this spec (it has its own)_

@@ -18,7 +18,7 @@
 |---|---|---|---|---|---|
 | 0 | n/a | Scaffold: monorepo, health gate, CI (D-19) | High | Done | n/a |
 | 1 | F01 | Spec Reader | High | Done | 0 |
-| 2 | F02 | Target Config & Safety Allowlist | High | TBD | 0 |
+| 2 | F02 | Target Config & Safety Allowlist | High | Done | 0 |
 | 3 | F10 | Candy Swap Demo Target (built in Kiro) | High | TBD | F01 (to check its spec) |
 | 4 | F03 | Route Scout | High | TBD | F02, F10 |
 | 5 | F04 | Core Personas & Input Generators | High | TBD | n/a |
@@ -102,7 +102,9 @@
 
   IDs stay the same across re-parses.
 
-### F02: Target Config & Safety Allowlist · High · TBD
+### F02: Target Config & Safety Allowlist · High · Done
+
+> 2026-10-31: done. Plan `docs/plans/2026-10-31-F02-config-safety.md`, rulings in D-29. Every Done-when check passes against real headless Chromium, and the guard and config tests pass 5 of 5 pinned to one CPU (`npm run test:guard:1cpu`). KI-19, KI-20 and KI-21 are resolved. The review's minors are in KI-29.
 
 **Owns:** the `poltergeist.config.json` schema and loader, secrets and redaction, the host allowlist, the network guard (dead-proxy backstop, WebRTC block, `forbidden` rules), the concurrency limiter and the reset command executor. Implements Requirement 2.
 **Not this feature:** house rules from steering (F17) · executing steps and deciding what a block means for a verdict (F06).
@@ -447,3 +449,4 @@ Implements Requirement 12.
   - Possession and exorcism moved from F22 to F26.
   - Prototype lessons linked for F01–F03.
 - 2026-10-31: **F01 Done** (D-27). **Scaffold Done**: CI is green on GitHub Actions (PR #1).
+- 2026-10-31: **F02 Done** (D-29). CI now installs Chromium for the guard tests.
