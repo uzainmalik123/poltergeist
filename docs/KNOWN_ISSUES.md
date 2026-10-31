@@ -30,7 +30,7 @@
 | KI-19 | A `resetCommand` that backgrounds a long-lived child keeps the pipes open, so reset times out and kills it | Minor | F06 | Resolved (2026-10-31, D-29) |
 | KI-20 | An unused account with an unset `env:NAME` password keeps the literal `env:NAME` string as its password | Minor | F03, F06 | Resolved (2026-10-31, D-29) |
 | KI-21 | F02 deferred review minors: hardening and test gaps in config, reset and guard | Minor | F02, F06 | Resolved (2026-10-31, D-29); deferred minors in KI-29 |
-| KI-22 | F03 deferred review minors: login heuristic, redaction and capture hardening, test gaps | Minor | F05, F06 | Open (fold into the F03 rebuild) |
+| KI-22 | F03 deferred review minors: login heuristic, redaction and capture hardening, test gaps | Minor | F05, F06 | Resolved (2026-10-31, D-30) |
 | KI-23 | Under load, Chromium sometimes reports a stopped redirect hop only as a failure of the original request, so the guard missed it (CI red) | Major | F02, CI (D-19) | Resolved in prototype (D-22); build it in from the start |
 | KI-24 | Eligibility: the idea was prototyped before the window; how to present the rebuild honestly | Major | submission | Open |
 | KI-25 | Glyph rendering of 12 live tiles at 4 fps may be too slow in the browser | Minor | F26, F12 | Open |
@@ -38,6 +38,8 @@
 | KI-27 | Poltergeist could look too similar to Reanimator (same team circle, same dither technique) | Minor | F26, D-24 | Open |
 | KI-28 | `npm audit` reports 11 moderate issues in dev-only lint tooling (minimatch, via eslint and typescript-eslint) | Minor | none (dev only) | Open |
 | KI-29 | F02 rebuild review minors: WebRTC iframe layer, dead-port reuse, provider keys in reset env, unbounded reset buffer, non-canonical IPv6 entries, terse missing-file message, guard tests that could reach the internet on regression | Minor | F06 | Open |
+| KI-30 | F03 Done-when has not yet been run against the real Candy Swap (built against a fixture, D-30) | Major | F03 sign-off, KI-01 spike | Open |
+| KI-31 | F03 rebuild review minors: label lookups before trim, capture calls without timeouts, sub-path session loss, reserved `anonymous` account name, standing alerts on login pages, login-time blocks not in any file, shadow-DOM testIds, case-only slug collisions | Minor | F05, F06 | Open |
 
 ---
 
@@ -68,6 +70,7 @@
   2. The compiler then gets only those snapshots.
 - **Decide during:** F05.
 - **2026-10-30 (F03 done):** Scout now provides per-route hashes, titles and interactive lists to choose routes from. The decision itself is still F05's.
+- **2026-10-31 (F03 rebuild):** the same holds; route files also carry a `testIds` list for non-interactive targets (status messages), which may help match criteria to routes.
 
 ### KI-04: Candy Swap might not contain any interesting real bugs · Major · Open
 - **Context:** D-10 forbids planting bugs.
@@ -126,6 +129,7 @@
   4. Have a `login` step for explicit flows.
 - **2026-10-30 (F03 grill, D-20):** Scout logs in heuristically (with optional `fields` overrides) and returns each account's `storageState` in memory, never on disk. Still open: how F06 runs a Doppelgänger with two contexts on one account, and how the Revenant expires a session.
 - **2026-10-30 (F03 done):** Scout's half is done (login plus in-memory storageState). F06's Doppelgänger and Revenant handling is still open.
+- **2026-10-31 (F03 rebuild):** rebuilt the same way; `scout()` returns `sessions: Map<account, storageState>`.
 
 ### KI-11: Possible LLM refusals or watered-down plans · Minor · Open
 - **Assessment:** this is low-risk because of D-08 and D-09 (plain QA wording, own app, no payload generation, localhost allowlist).
@@ -229,7 +233,7 @@
 - **Next action:** pick up the hardening items when F06 starts consuming the guard and `runReset`. Add the tests opportunistically when touching each module.
 - **Resolved (2026-10-31, F02 rebuild, D-29):** every hardening item and test gap above was built in the first pass. The bypass builder is internal and re-validates entries, IPv6 uses `net.isIPv6`, and `BlockedRequest.errorText` is set on failure-classified blocks. The final review's minors are in KI-29.
 
-### KI-22: F03 deferred review minors · Minor · Open
+### KI-22: F03 deferred review minors · Minor · Resolved
 - **Context:** F03's task reviews and final review (2026-10-30) left these minor items. The serious ones were fixed before merge (see D-21).
 - **Login:**
   - The success heuristic (left `loginRoute` or no password field) can false-positive (for example `/login/failed`). A failed login also waits out the full `loginTimeoutMs`. Routes that bounce back to the login page are still marked `authFailed`.
@@ -253,6 +257,12 @@
   - The `page could not be reopened` branch is untested. The `/huge` end-to-end assertion is loosened (the budget is proven by unit and `/cards` tests). The `vi.mock` factory reads a module-level `pagesSeen` (fragile).
 - **Next action:** pick up the login and redaction items when F06 starts using Scout's output, and the rest opportunistically.
 - **2026-10-31 (F02 rebuild):** targets with userinfo (`http://u:p@host`) are now rejected by the config schema (D-29). The redactor also scrubs percent-encoded secrets. The rest waits for F03's rebuild.
+- **2026-10-31 (F03 rebuild, resolved, D-30):** all items built in the first pass.
+  - Login: success needs no visible password field and a page off the `loginRoute` subtree (or exactly on it, for SPAs), so `/login/failed` fails; failures are detected after a page load or an alert plus 500 ms, not at the deadline; only `TimeoutError` counts as a timeout; `fields` overrides are `count()`-checked with a specific reason; reasons are redacted.
+  - Redaction: blocked `url`, `host` and `errorText`, `finalPath`, `reason`, title and snapshot are redacted; elements and testIds that would change under redaction are dropped; percent-encoded secrets were handled in F02.
+  - Capture: non-timeout errors are cut to one line; names are unescaped with `JSON.parse`; duplicate testIds are dropped; testIds are looked up concurrently with a per-id try/catch, and a lookup timeout degrades to a bare `{testId}` instead of dropping it; unattached testIds live in their own list, inside the budget.
+  - Trim: collapsing works on decoded values and re-encodes, so it never cuts mid-escape; both collapse rules on one line are tested; the key overhead is measured, not hard-coded.
+  - Tests: quoted names over 80 characters, exact slug outputs, the SPA success branch, the login deadline, reasons without the password, and the 1-CPU run are all covered.
 
 ### KI-23: Under load, Chromium sometimes reports a stopped redirect hop only as a failure of the original request · Major · Resolved
 - **What happened:** the first two CI runs after the F03 merge (41101768063 and 41171915551, 2026-10-30/31) failed in `guard.test.ts` › "EventSource redirect to a third-party host is blocked": `blocked` stayed empty. The page saw `'error'`, so the request was stopped.
@@ -310,3 +320,23 @@
 - **Loader:** the missing-file message (`cannot read <path>: ENOENT`) could suggest `--config` or creating `poltergeist.config.json`.
 - **Tests:** the guard tests use `example.com`, which `--host-resolver-rules=MAP *.test` doesn't cover. If the guard regressed, they would reach the real internet. Use `evil.test` instead.
 - **Next action:** pick these up when F06 starts consuming the guard and `runReset`.
+
+### KI-30: F03 Done-when not yet run against the real Candy Swap · Major · Open
+- **Context:** F03 was built before F10 (D-30), so its Done-when ran against a tests-only fixture shaped like Candy Swap.
+- **Risk:** the real Kiro-built app may use markup the login heuristic or the capture rules don't expect (unlabelled inputs, icon buttons, client-side login).
+- **Next action:** when F10 lands, run `scout()` against `http://localhost:4000` with Candy Swap's config. Check that the "Claim" buttons and the trade-form fields are listed by role and name, and that every emitted label and testId resolves. Add an integration test if it can run in CI.
+
+### KI-31: F03 rebuild review minors · Minor · Open
+- **Context:** the final review of the F03 rebuild (2026-10-31). Its Critical and Important findings were fixed before merge: a secret in a testId element's name, JSON-escaped secrets in snapshots, login forms rendered after load, a spinner taken for in-place login success, and a path under two identities overwriting its file (D-30).
+- **Capture:**
+  - `attachLabels` runs a `getByLabel` count for every labelable entry before trim. A page with ~1500 labelled inputs at a 3 s budget ends as `capture failed`. Trim first (≤ 200 entries), and degrade (skip labels and testIds) instead of throwing when the budget is spent.
+  - `count()`, `evaluateAll()`, `page.title()` and `page.close()` have no timeout, so a hung renderer could stall a route past its hard budget. Race `captureRoute` against the deadline.
+  - testId uniqueness is counted with `evaluateAll` on the light DOM, while `getByTestId` pierces shadow DOM, so a "unique" id could resolve to two elements.
+- **Login and identities:**
+  - Session loss is exact `finalPath === loginRoute` (D-21). A bounce to `/login/expired` is reported as `redirected`. `isUnderLoginRoute` could be used.
+  - An account named `anonymous` is treated as the anonymous identity. Reserve the name in the config schema.
+  - A `role=alert` that is always visible on the login page makes a slow (> 500 ms) successful submit look failed. Ignore alerts present before the click.
+  - A wrong `fields.password` override waits out the login budget before the specific reason is given.
+  - Requests blocked during login reach `onBlocked` but no route file; late blocks from one page can be attributed to the next route.
+- **Files:** slugs differing only by case collide on case-insensitive filesystems; a very long path can make `writeFile` throw `ENAMETOOLONG` and abort the run.
+- **Next action:** pick these up when F05/F06 start consuming Scout output, or when KI-30's real Candy Swap run hits one.

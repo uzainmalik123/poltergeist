@@ -11,6 +11,11 @@ describe('Redactor', () => {
     expect(new Redactor(['p@ss w/rd']).redact('?p=p%40ss%20w%2Frd')).toBe('?p=[REDACTED]');
   });
 
+  it('also replaces the JSON-escaped form', () => {
+    const r = new Redactor(['pa"ss\\77']);
+    expect(r.redact('- button "pa\\"ss\\\\77"')).toBe('- button "[REDACTED]"');
+  });
+
   it('replaces longer secrets first', () => {
     expect(new Redactor(['ab', 'abcd']).redact('abcd ab')).toBe('[REDACTED] [REDACTED]');
   });
