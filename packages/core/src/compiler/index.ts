@@ -5,3 +5,4 @@ export * from './prompt.js';
 export * from './cache.js';
 export * from './errors.js';
 export * from './llm.js';
+export * from './compile.js';
