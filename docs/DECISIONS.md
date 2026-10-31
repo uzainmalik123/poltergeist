@@ -33,6 +33,7 @@
 | D-24 | The costume is a "haunted terminal": ASCII glyphs via Bayer dither, ectoplasm green for ghosts only, distinct from Reanimator | Accepted |
 | D-25 | Fresh start: new repo inside the hacking window, rebuilt from docs (no ported code), real `.kiro/` spec, new build order | Accepted |
 | D-26 | Costume Kit is its own package and a High feature (F26); possession/exorcism move there from F22 | Accepted |
+| D-27 | Spec Reader edge-case rulings and API (F01, extends D-16): `parseSpec`/`parseRequirements`, warning codes, KI-16 edge cases | Accepted |
 
 ---
 
@@ -273,3 +274,17 @@
   - F22 (Low) keeps only sound, trails and idle motion.
 - **Why:** the costume is now the category we compete in, and the CLI, report and Séance must share one look without depending on each other.
 
+
+### D-27: Spec Reader edge cases and API (F01, extends D-16)
+- **Context:** grilling F01 for the rebuild (2026-10-31). LESSONS § F01 and KI-16 listed edge cases the prototype deferred. The user asked to accept the recommended answers.
+- **Decision:**
+  - **API:** `parseSpec(specDir): Promise<{criteria, warnings}>` reads `<specDir>/requirements.md` and throws `SpecNotFoundError` if it is missing or unreadable. The pure `parseRequirements(markdown): {criteria, warnings}` never throws. Both live in `packages/core/src/spec/`.
+  - **Warnings** are `{code, message, line?}` with codes `empty-spec`, `no-criteria`, `ignored-list`, `unrecognized-heading`, `duplicate-requirement` and `no-requirement-headings`.
+  - **More than 26 duplicates:** suffixes continue spreadsheet-style (`b`…`z`, `aa`, `ab`…). There is no cap.
+  - **`Requirement 1a`** (or any number followed by letters) is not a requirement heading. It produces an `unrecognized-heading` warning instead of being read as `1`.
+  - **Code blocks and tables inside a criterion** are part of its plain text (so they're hashed), and `raw` keeps the source.
+  - **EARS keywords** must be followed by whitespace or a comma, so `IF-Match` is not IF.
+  - **Subject:** THE is matched in any case. `subject` is the text after the last `the` before the first SHALL, inside the final clause, so a lowercase `the` with no comma still splits.
+  - **Blockquoted specs** are not supported. Lists inside a blockquote are not criteria, so the requirement gets a `no-criteria` warning.
+  - The scaffold (build order 0) is delivered in the same cycle as F01, as the first tasks of its plan.
+- **Consequences:** this resolves the deferred minors in KI-16. KI-16 itself stays open until a fresh Kiro-generated spec is added as a fixture (F10).

@@ -167,6 +167,7 @@
 - **Blocks:** F01's robustness on real user specs.
 - **Next action:** generate a fresh spec with Kiro (main project, or Candy Swap in F10) and add it as an F01 fixture. If it uses bullets or explicit IDs, add a decision that extends D-16.
 - **Notes (2026-10-30, F01 done):** the parser reports layouts it can't read as warnings instead of dropping them silently: `no-criteria` (e.g. bulleted criteria), `ignored-list` (a second numbered list), `unrecognized-heading` (`Requirement #3`) and `empty-spec`. Deferred minors from the review: suffixes after 26 duplicate requirement numbers; `Requirement 1a` parsing as 1; code blocks and tables inside a criterion not hashed; `IF-Match` read as IF; a lowercase `the` subject not split when there's no comma; specs inside a blockquote.
+- **Notes (2026-10-31, F01 rebuild grill):** all the deferred minors above are ruled on in D-27. The issue stays open until a real Kiro-generated spec (Candy Swap, F10) is added as a fixture.
 
 
 ### KI-17: Forbidden rules only check the first request of a redirect chain · Minor · Open
