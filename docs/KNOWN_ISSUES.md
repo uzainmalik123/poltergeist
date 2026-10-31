@@ -11,7 +11,7 @@
 |---|---|---|---|---|
 | KI-01 | The LLM may not reliably turn EARS criteria into valid, meaningful plans | Blocker | F05 | Open |
 | KI-02 | The oracle problem: an assertion may not truly capture the criterion | Major | F05, F07 | Open |
-| KI-03 | Choosing which route a criterion belongs to | Major | F03, F05 | Open |
+| KI-03 | Choosing which route a criterion belongs to | Major | F03, F05 | Investigating (deterministic picker, D-32; measure in the spike) |
 | KI-04 | Candy Swap might not contain any interesting real bugs | Major | F10, demo | Open |
 | KI-05 | 2026 rules, tracks, deadline and "new projects only" are unconfirmed | Blocker | submission, D-02 | Open |
 | KI-06 | Kiro hook schema, MCP config location and Power format are not verified | Major | F11, F13, F18 | Open |
@@ -40,8 +40,9 @@
 | KI-29 | F02 rebuild review minors: WebRTC iframe layer, dead-port reuse, provider keys in reset env, unbounded reset buffer, non-canonical IPv6 entries, terse missing-file message, guard tests that could reach the internet on regression | Minor | F06 | Open |
 | KI-30 | F03 Done-when has not yet been run against the real Candy Swap (built against a fixture, D-30) | Major | F03 sign-off, KI-01 spike | Open |
 | KI-31 | F03 rebuild review minors: label lookups before trim, capture calls without timeouts, sub-path session loss, reserved `anonymous` account name, standing alerts on login pages, login-time blocks not in any file, shadow-DOM testIds, case-only slug collisions | Minor | F05, F06 | Open |
-| KI-32 | Valid form fills may need typed inputs (numbers, emails, dates); DSL `literal` input vs D-04 unresolved | Minor | F05, KI-01 spike | Open |
+| KI-32 | Valid form fills may need typed inputs (numbers, emails, dates); DSL `literal` input vs D-04 unresolved | Minor | KI-01 spike, F04 follow-up | Open (`literal` dropped, D-32; typed generators open) |
 | KI-33 | F04 review minors: BLNS header rule fragile on upstream bumps, no `.gitattributes` for vendored data, `blns.txt` read from source path (packaging), RangeError checked before unknown id, try/catch `.id` assertions | Minor | F09 (packaging) | Open |
+| KI-34 | F05 Done-when (≥ 80% valid or justified `notApplicable`, live LLM) not yet run against the real Candy Swap; KI-01 spike re-scoped to use F05 | Major | F05 sign-off, KI-01 spike | Open |
 
 ---
 
@@ -71,6 +72,7 @@
   1. A cheap first pass: the LLM, or a keyword match against route titles and element names, picks ≤ 2 routes per criterion.
   2. The compiler then gets only those snapshots.
 - **Decide during:** F05.
+- **2026-10-31 (F05 grill, D-32):** deterministic keyword-overlap picker, top 2 `ok` routes, no LLM pass; no match → `uncompilable`. Measure miss rate in the KI-01 spike; fall back to a cheap LLM pass only if it misses.
 - **2026-10-30 (F03 done):** Scout now provides per-route hashes, titles and interactive lists to choose routes from. The decision itself is still F05's.
 - **2026-10-31 (F03 rebuild):** the same holds; route files also carry a `testIds` list for non-interactive targets (status messages), which may help match criteria to routes.
 
@@ -346,6 +348,7 @@
 - **Context:** F04 (D-31) added a `plain` generator for ordinary valid values. Forms that need a number, email or date can't be filled validly by any generator yet. The DSL in design §6 also allows `input:{literal}`, which lets the LLM write a value and sits awkwardly with D-04.
 - **Blocks:** F05 (schema) and the KI-01 spike (it may show plans needing typed values).
 - **Next action:** in the spike, count how often a plan needed a typed value or used a literal. Then decide in F05 whether to add typed generators (`number`, `email`, `date`) or keep a restricted `literal`, and record a D-xx.
+- **2026-10-31 (F05, D-32):** `literal` is dropped from the DSL. Typed generators remain open: add them to F04's registry if the spike shows plans needing them.
 
 ### KI-33: F04 review minors · Minor · Open
 - **Context:** the final review of F04 (2026-10-31). Its one Important finding was fixed before merge (the jinja2 SSTI section is now excluded, D-31). These minors remain.
@@ -356,3 +359,9 @@
 - **API:** `generate('bogus', -1, 0)` throws `RangeError` before `UnknownGeneratorError`. Swap the order if F05's error mapping cares.
 - **Tests:** the try/catch `.id` assertions in `generators.test.ts` and `registry.test.ts` would pass silently if nothing threw (the `toThrow` line above them covers it). Use `toThrow(expect.objectContaining({ id }))`.
 - **Next action:** fix the `.gitattributes` and count pin with the next naughty-strings change. Fix the packaging item in F09.
+
+### KI-34: F05 Done-when not yet run live against Candy Swap · Major · Open
+- **Context:** F05 was built fixture-first (D-32): F10 isn't built, the KI-01 spike hasn't run, and no API key is available in dev sessions. Health tests use a fake `LlmClient`.
+- **Blocks:** F05 sign-off, the KI-01 spike.
+- **Next action:** once F10 exists and a key is available (`doppler run -- …`), compile Candy Swap with the real client: record % valid on first try and after retry, justified `notApplicable`, refusals and route-picker misses; rerun to confirm zero LLM calls. Feed the numbers into the re-scoped KI-01 spike.
+
