@@ -6,8 +6,9 @@ import { classifyEars } from './ears.js';
 import { criterionHash, normalizeText } from './hash.js';
 import type { Criterion, ParsedSpec, SpecWarning } from './types.js';
 
-// `Requirement N` with an optional `:` `.` `-` `–` `—` separator and title (D-16). `1a`, `#3` don't match (D-27).
-const REQUIREMENT = /^requirement\s+(\d+)(?:\s*[:.\-–—]\s*(.*)|\s*)$/i;
+// `Requirement N` with an optional `:` `.` `-` `–` `—` separator and an optional title (D-16).
+// The number must end at a non-word character, so `1a` doesn't match, and neither does `#3` (D-27).
+const REQUIREMENT = /^requirement\s+(\d+)(?![\p{L}\p{N}_])\s*(?:[:.\-–—]\s*)?(.*)$/iu;
 const REQUIREMENT_LIKE = /^requirement\b/i;
 
 type Section = { requirementId: string; title: string; depth: number; line: number; list: List | null };
@@ -21,7 +22,10 @@ export function requirementSuffix(k: number): string {
   return s;
 }
 
-/** Plain text of a block, with a space between blocks so nested lists, code and tables don't run together. */
+/**
+ * Plain text of a node, with a space between blocks so nested lists, code and tables don't run together,
+ * and a space at hard line breaks (which `toString` drops).
+ */
 function blockText(node: Nodes): string {
   switch (node.type) {
     case 'list':
@@ -30,8 +34,10 @@ function blockText(node: Nodes): string {
     case 'table':
     case 'tableRow':
       return node.children.map((child) => blockText(child)).join(' ');
+    case 'break':
+      return ' ';
     default:
-      return toString(node);
+      return 'children' in node ? node.children.map((child) => blockText(child)).join('') : toString(node);
   }
 }
 

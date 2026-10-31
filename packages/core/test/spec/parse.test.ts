@@ -52,6 +52,8 @@ describe('parseRequirements', () => {
       '## requirement 4. B\n\n1. THE X SHALL b.',
       '#### Requirement 5 – C\n\n1. THE X SHALL c.',
       '### Requirement 6\n\n1. THE X SHALL d.',
+      '### Requirement 7 Login\n\n1. THE X SHALL e.',
+      '### Requirement 8 (Cart)\n\n1. THE X SHALL f.',
     ].join('\n\n');
     const { criteria, warnings } = parseRequirements(md);
     expect(warnings).toEqual([]);
@@ -60,6 +62,8 @@ describe('parseRequirements', () => {
       ['4', 'B'],
       ['5', 'C'],
       ['6', ''],
+      ['7', 'Login'],
+      ['8', '(Cart)'],
     ]);
   });
 
@@ -126,6 +130,15 @@ describe('parseRequirements', () => {
   it('includes a fenced code block in the text', () => {
     const md = '### Requirement 1: A\n\n1. THE X SHALL print:\n\n   ```\n   hello\n   ```\n';
     expect(parseRequirements(md).criteria[0]!.text).toBe('THE X SHALL print: hello');
+  });
+
+  it.each([
+    ['two trailing spaces', '1. WHEN a user clicks  \n   THE X SHALL a.\n'],
+    ['a trailing backslash', '1. WHEN a user clicks\\\n   THE X SHALL a.\n'],
+  ])('keeps a space at a hard line break (%s)', (_name, item) => {
+    const [c] = parseRequirements(`### Requirement 1: A\n\n${item}`).criteria;
+    expect(c!.text).toBe('WHEN a user clicks THE X SHALL a.');
+    expect(c!.ears).toMatchObject({ trigger: 'a user clicks', subject: 'X' });
   });
 
   it('numbers from the list start', () => {

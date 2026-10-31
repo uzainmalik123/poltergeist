@@ -44,6 +44,10 @@ describe('classifyEars', () => {
       { kind: 'unwanted', trigger: 'a; b', subject: 'X', response: 'y.' },
     ],
     [
+      'WHEN x happens, THE checkout page of the store SHALL show y.',
+      { kind: 'event', trigger: 'x happens', subject: 'checkout page of the store', response: 'show y.' },
+    ],
+    [
       'THE A SHALL b and SHALL c.',
       { kind: 'ubiquitous', subject: 'A', response: 'b and SHALL c.' },
     ],

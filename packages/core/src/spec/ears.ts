@@ -14,6 +14,7 @@ const FIELD: Record<Keyword, 'trigger' | 'precondition' | null> = {
 const KEYWORD = /\b(while|when|if|where|then)(?=[\s,])/gi;
 const SHALL = /\bshall\b/i;
 const THE = /\bthe\s+/gi;
+const THE_UPPER = /\bTHE\s+/g;
 
 const trimClause = (s: string): string => s.replace(/^[\s,]+|[\s,]+$/g, '');
 
@@ -43,7 +44,9 @@ export function classifyEars(text: string): { kind: EarsKind | 'freeform'; ears:
   const final = last ? head.slice(last.end) : head;
   const lastComma = final.lastIndexOf(',');
   const tailStart = lastComma + 1;
-  const theMatch = [...final.slice(tailStart).matchAll(THE)].at(-1);
+  // Prefer the last upper-case THE, so `THE checkout page of the store` keeps its whole subject (D-27).
+  const tail = final.slice(tailStart);
+  const theMatch = [...tail.matchAll(THE_UPPER)].at(-1) ?? [...tail.matchAll(THE)].at(-1);
   const subject = theMatch ? trimClause(final.slice(tailStart + theMatch.index + theMatch[0].length)) : '';
   const finalClauseEnd = theMatch ? tailStart + theMatch.index : lastComma >= 0 ? lastComma : final.length;
 
