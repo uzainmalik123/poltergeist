@@ -74,6 +74,7 @@ Each PRD feature (or KNOWN_ISSUES item) goes through this cycle. The skills are 
 | 5. **Close** | n/a | Run "Done when" and `npm run health`. Set PRD status to `Done`, tick `tasks.md`, add a changelog line, update KNOWN_ISSUES/DECISIONS |
 
 - Don't use superpowers' `brainstorming` for features already in the PRD. Grill instead.
+- **`main` is protected (D-28):** never push to it. Push a feature branch and open a PR, and merge only once the `health` check is green.
 - **Commits:** follow the plan's commit steps only if the user has OK'd commits for this cycle. Otherwise stage the changes and report. Commit messages are `F05: <what>`.
 - **Worktrees** are fine. Merge back to `main` and clean up before closing the cycle.
 
