@@ -75,7 +75,7 @@ Criterion IDs follow Kiro's convention (`N.M`, D-16), so Poltergeist's own Spec 
 
 #### Acceptance Criteria
 
-1. THE Persona_Library SHALL define each built-in persona with an id, display name, behaviour, allowed DSL steps, input generators, actor count and ASCII sprite.
+1. THE Persona_Library SHALL define each built-in persona with an id, display name, one-line tagline, behaviour, allowed DSL steps, input generators, actor count and a sprite reference resolved by the Costume Kit.
 2. THE Input_Generators SHALL produce values deterministically from a generator id, a seed and an index, and the LLM SHALL only choose generator ids, never write values.
 3. WHERE the target project has a Poltergeist steering file, THE Persona_Library SHALL apply its persona enable/disable flags, and steering SHALL only ever tighten rules [F17].
 
