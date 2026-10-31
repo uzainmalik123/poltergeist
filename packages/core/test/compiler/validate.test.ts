@@ -139,4 +139,13 @@ describe('validatePlan', () => {
     const plan = doppel({ assert: [{ api: { method: 'GET', path: '/a', status: 42 } }] });
     expect(validatePlan(plan, { persona: D, ...market }).join('\n')).toMatch(/100…599/);
   });
+
+  it('barriers in a different order across actors are rejected (deadlock)', () => {
+    const plan = doppel();
+    plan.actors = {
+      a: [{ goto: '/market' }, { barrier: 'one' }, { barrier: 'two' }, claim],
+      b: [{ goto: '/market' }, { barrier: 'two' }, { barrier: 'one' }, claim],
+    };
+    expect(validatePlan(plan, { persona: D, ...market }).join('\n')).toMatch(/barriers must be reached in the same order/);
+  });
 });

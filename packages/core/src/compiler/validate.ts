@@ -105,6 +105,17 @@ export function validatePlan(body: PlanBody, ctx: ValidationContext): string[] {
     barriersByActor.set(name, barriers);
   }
 
+  // Every actor must meet the barriers in the same order, or the runner deadlocks (Req 6.3).
+  const sequences = [...barriersByActor.entries()];
+  const [firstName, firstSeq] = sequences[0] ?? ['a', []];
+  for (const [name, seq] of sequences.slice(1)) {
+    const shared = seq.filter((b) => firstSeq.includes(b));
+    const expected = firstSeq.filter((b) => seq.includes(b));
+    if (shared.join('\u0000') !== expected.join('\u0000')) {
+      err(`actors.${name}`, `barriers must be reached in the same order as actor ${firstName} (${expected.join(', ')})`);
+    }
+  }
+
   const allBarriers = new Set([...barriersByActor.values()].flat());
   for (const b of allBarriers) {
     for (const [name, list] of barriersByActor) {

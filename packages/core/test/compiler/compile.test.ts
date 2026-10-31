@@ -209,4 +209,32 @@ describe('compile', () => {
     ]);
     expect(seen.sort()).toEqual(res.pairs.map((p) => `${p.criterion}/${p.persona}`).sort());
   });
+
+  it('a cache hit for the same text under a new id is stamped with the new id', async () => {
+    const cacheDir = await mkdtemp(join(tmpdir(), 'compile-cache-'));
+    await run(valid(), [CLAIM], { cacheDir, personas: ['wraith'] });
+    const renumbered = criterion('7.1', CLAIM.text);
+    const res = await run(valid(), [renumbered], { cacheDir, personas: ['wraith'] });
+    const p = res.pairs[0]!;
+    expect(p).toMatchObject({ status: 'compiled', cached: true, criterion: '7.1' });
+    if (p.status !== 'compiled') throw new Error();
+    expect(p.plan.criterion).toBe('7.1');
+  });
+
+  it('CompilerError stops queued pairs: no more calls, writes or onPlan after rejection', async () => {
+    const criteria = Array.from({ length: 10 }, (_, i) => criterion(`6.${i + 1}`, `THE Market SHALL let a user claim Sour Skulls, case ${i}.`));
+    const fake = fakeLlm(async () => {
+      await new Promise((r) => setTimeout(r, 5));
+      throw new CompilerError('bad key');
+    });
+    const outDir = await mkdtemp(join(tmpdir(), 'compile-out-'));
+    const seen: string[] = [];
+    await expect(run(fake, criteria, { outDir, onPlan: (p) => seen.push(p.criterion) })).rejects.toBeInstanceOf(CompilerError);
+    const callsAtReject = fake.calls.length;
+    await new Promise((r) => setTimeout(r, 100));
+    expect(callsAtReject).toBeLessThanOrEqual(4);
+    expect(fake.calls.length).toBe(callsAtReject);
+    expect(seen).toEqual([]);
+    expect(await readdir(join(outDir, 'plans'))).toEqual([]);
+  });
 });

@@ -43,6 +43,7 @@
 | KI-32 | Valid form fills may need typed inputs (numbers, emails, dates); DSL `literal` input vs D-04 unresolved | Minor | KI-01 spike, F04 follow-up | Open (`literal` dropped, D-32; typed generators open) |
 | KI-33 | F04 review minors: BLNS header rule fragile on upstream bumps, no `.gitattributes` for vendored data, `blns.txt` read from source path (packaging), RangeError checked before unknown id, try/catch `.id` assertions | Minor | F09 (packaging) | Open |
 | KI-34 | F05 Done-when (≥ 80% valid or justified `notApplicable`, live LLM) not yet run against the real Candy Swap; KI-01 spike re-scoped to use F05 | Major | F05 sign-off, KI-01 spike | Open |
+| KI-35 | F05 review minors: cache/plan write failure loses paid results, duplicate persona ids, prompt changes not in the cache key (title, snapshot, manual `PROMPT_VERSION`), same path under two identities, unstated prompt limits, backslash `api` paths, theme words via user/app content | Minor | F06, F09 | Open |
 
 ---
 
@@ -365,4 +366,15 @@
 - **Blocks:** F05 sign-off, the KI-01 spike.
 - **Done on the fixture (2026-10-31):** `packages/core/test/compiler/done-when.test.ts` compiles a 5-criterion fixture spec against the fixture's real Scout output with a scripted fake: 15/15 valid or justified `notApplicable`, and a rerun makes 0 calls.
 - **Next action:** once F10 exists and a key is available (`doppler run -- …`), compile Candy Swap with `createAnthropicClient()`: record % valid on first try and after retry, justified `notApplicable`, refusals and route-picker misses; rerun to confirm zero LLM calls. Feed the numbers into the re-scoped KI-01 spike.
+
+### KI-35: F05 review minors · Minor · Open
+- **Context:** the final review of F05 (2026-10-31). Its four Important findings were fixed before merge: cached plans re-stamped with the current criterion id, queued pairs stop after a `CompilerError`, missing credentials abort with `CompilerError`, and barriers must be met in the same order by every actor (D-32).
+- **Writes:** `writeCache` and the `plans/` writes throw, so a full or read-only disk (or a bad `cacheDir`) rejects `compile()` after the LLM calls were paid for. Make cache writes best-effort and clean up the `.tmp` file on a failed rename.
+- **Inputs:** duplicate ids in `opts.personas` give duplicate pairs and two concurrent writes to one plan file. Dedupe or reject.
+- **Cache key gaps:** the route title and snapshot reach the prompt but not `routeHash` (Req 3.7 by design), so a plan built on old static text can be reused. `SYSTEM_PROMPT`, `PRESS_KEYS` and the validator limits rely on a manual `PROMPT_VERSION` bump; cached plans aren't re-validated. Consider hashing the system prompt into the key and re-running `validatePlan` on hits.
+- **Routes:** the same path scouted under two identities can take both route slots; `goto` then doesn't say which identity. Prefer one identity per path, or add identity to `goto` (F06).
+- **Prompt:** the 10-assertion and 300-character limits aren't stated in `SYSTEM_PROMPT`, so a model can waste its retry on them.
+- **Validation:** `api.path` like `/\evil.test/x` passes; URL resolution treats `\` as `/`. The D-18 guard blocks it at runtime; also reject `\` at compile time.
+- **D-09 scope:** criterion text and app snapshots go into prompts verbatim, so a Halloween-flavoured app or this repo's own spec can put theme words in a prompt. Our own framing stays clean (tested). Decide whether Req 5.6 means "our framing" and say so.
+- **Next action:** fix the write and duplicate-persona items when F09 wires `compile()` into `summon`; the rest when F06 consumes plans or the KI-34 live run shows them.
 

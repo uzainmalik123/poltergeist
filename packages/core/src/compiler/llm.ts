@@ -52,6 +52,11 @@ export function createAnthropicClient(opts: { anthropic?: Pick<Anthropic, 'messa
         if (err instanceof Anthropic.AuthenticationError || err instanceof Anthropic.PermissionDeniedError) {
           throw new CompilerError(`The LLM provider rejected the credentials (HTTP ${err.status}).`, { cause: err });
         }
+        // Anything that isn't an SDK error was raised while setting up the request, e.g. no credentials.
+        if (!(err instanceof Anthropic.AnthropicError)) {
+          const message = err instanceof Error ? err.message : String(err);
+          throw new CompilerError(`The LLM client could not be set up: ${message}`, { cause: err });
+        }
         throw err;
       }
       if (message.stop_reason === 'refusal') {

@@ -82,4 +82,19 @@ describe('createAnthropicClient', () => {
     });
     await expect(client.complete(req)).rejects.toBe(boom);
   });
+
+  it('errors raised before any request (no credentials) → CompilerError', async () => {
+    const { client } = stub(async () => {
+      throw new Error('Could not resolve authentication method.');
+    });
+    await expect(client.complete(req)).rejects.toBeInstanceOf(CompilerError);
+  });
+
+  it('connection errors pass through', async () => {
+    const boom = new Anthropic.APIConnectionError({ message: 'socket hang up' });
+    const { client } = stub(async () => {
+      throw boom;
+    });
+    await expect(client.complete(req)).rejects.toBe(boom);
+  });
 });

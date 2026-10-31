@@ -66,9 +66,10 @@ function check(text: string, stopReason: string | null, criterion: Criterion, pe
   return { ok: { kind: 'plan', plan: { criterion: criterion.id, persona: persona.id, intent, routes: planRoutes, actors, assert } } };
 }
 
+/** Re-stamps the ids: the cache key covers criterion text, not its id, so a renumbered criterion hits. */
 function fromCached(criterion: string, persona: PersonaId, c: CachedResult, cached: boolean, attempts: Attempts): PairResult {
   return c.kind === 'plan'
-    ? { status: 'compiled', criterion, persona, plan: c.plan, cached, attempts }
+    ? { status: 'compiled', criterion, persona, plan: { ...c.plan, criterion, persona }, cached, attempts }
     : { status: 'notApplicable', criterion, persona, reason: c.reason, routes: c.routes, cached, attempts };
 }
 
@@ -90,6 +91,11 @@ export async function compile(
   const limit = createLimiter(concurrency);
   let llmCalls = 0;
   let cacheHits = 0;
+  /** Set on the first CompilerError: queued pairs stop before calling, writing or reporting. */
+  let aborted = false;
+  const stopIfAborted = () => {
+    if (aborted) throw new CompilerError('Compile aborted after an earlier error.');
+  };
 
   const compilePair = async (criterion: Criterion, persona: Persona): Promise<PairResult> => {
     const base = { criterion: criterion.id, persona: persona.id };
@@ -113,20 +119,25 @@ export async function compile(
     const turns: LlmTurn[] = [{ role: 'user', text: buildUserPrompt(criterion, persona, routes) }];
     let errors: string[] = [];
     for (const attempt of [1, 2] as const) {
-      llmCalls++;
       let response;
       try {
-        response = await limit(() =>
-          opts.client.complete({ model: opts.model, system: SYSTEM_PROMPT, turns: [...turns], meta: { ...base, attempt } }),
-        );
+        response = await limit(() => {
+          stopIfAborted();
+          llmCalls++;
+          return opts.client.complete({ model: opts.model, system: SYSTEM_PROMPT, turns: [...turns], meta: { ...base, attempt } });
+        });
       } catch (err) {
-        if (err instanceof CompilerError) throw err;
+        if (err instanceof CompilerError) {
+          aborted = true;
+          throw err;
+        }
         const message = err instanceof Error ? err.message : String(err);
         return { status: 'uncompilable', ...base, reason: `llm error: ${message}`, errors: [], attempts: attempt };
       }
       if (response.kind === 'refusal') {
         return { status: 'uncompilable', ...base, reason: `refused: ${response.detail}`, errors: [], attempts: attempt };
       }
+      stopIfAborted();
       const checked = check(response.text, response.stopReason, criterion, persona, routes);
       if ('ok' in checked) {
         await writeCache(opts.cacheDir, key, checked.ok);
@@ -145,6 +156,7 @@ export async function compile(
     criteria.flatMap((criterion) =>
       personas.map(async (persona) => {
         const result = await compilePair(criterion, persona);
+        stopIfAborted();
         if (plansDir) {
           await writeFile(join(plansDir, `${result.criterion}__${result.persona}.json`), JSON.stringify(result, null, 2) + '\n');
         }
