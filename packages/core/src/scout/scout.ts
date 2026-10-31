@@ -42,7 +42,11 @@ export async function scout(browser: Browser, loaded: LoadedConfig, opts: ScoutO
   const origin = new URL(config.target).origin;
   const routeTimeoutMs = opts.routeTimeoutMs ?? 10000;
   const loginTimeoutMs = opts.loginTimeoutMs ?? 10000;
-  const slugs = slugsFor(config.routes.map((r) => r.path));
+  // A path scouted under two identities gets one file per identity (`market_anonymous`, `market_default`).
+  const uses = new Map<string, number>();
+  for (const r of config.routes) uses.set(r.path, (uses.get(r.path) ?? 0) + 1);
+  const keys = config.routes.map((r) => ((uses.get(r.path) ?? 0) > 1 ? `${r.path} ${identityOf(r.auth)}` : r.path));
+  const slugs = slugsFor(keys);
   const scoutDir = join(opts.outDir, 'scout');
   await mkdir(scoutDir, { recursive: true });
 
@@ -90,7 +94,7 @@ export async function scout(browser: Browser, loaded: LoadedConfig, opts: ScoutO
         const rest = outcome.visit;
         const scouted: RouteScout = {
           path: route.path,
-          slug: slugs.get(route.path) as string,
+          slug: slugs.get(keys[i] as string) as string,
           identity,
           ...rest,
           ...(rest.reason === undefined ? {} : { reason: redactor.redact(rest.reason) }),

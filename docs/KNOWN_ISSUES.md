@@ -39,6 +39,7 @@
 | KI-28 | `npm audit` reports 11 moderate issues in dev-only lint tooling (minimatch, via eslint and typescript-eslint) | Minor | none (dev only) | Open |
 | KI-29 | F02 rebuild review minors: WebRTC iframe layer, dead-port reuse, provider keys in reset env, unbounded reset buffer, non-canonical IPv6 entries, terse missing-file message, guard tests that could reach the internet on regression | Minor | F06 | Open |
 | KI-30 | F03 Done-when has not yet been run against the real Candy Swap (built against a fixture, D-30) | Major | F03 sign-off, KI-01 spike | Open |
+| KI-31 | F03 rebuild review minors: label lookups before trim, capture calls without timeouts, sub-path session loss, reserved `anonymous` account name, standing alerts on login pages, login-time blocks not in any file, shadow-DOM testIds, case-only slug collisions | Minor | F05, F06 | Open |
 
 ---
 
@@ -324,3 +325,18 @@
 - **Context:** F03 was built before F10 (D-30), so its Done-when ran against a tests-only fixture shaped like Candy Swap.
 - **Risk:** the real Kiro-built app may use markup the login heuristic or the capture rules don't expect (unlabelled inputs, icon buttons, client-side login).
 - **Next action:** when F10 lands, run `scout()` against `http://localhost:4000` with Candy Swap's config. Check that the "Claim" buttons and the trade-form fields are listed by role and name, and that every emitted label and testId resolves. Add an integration test if it can run in CI.
+
+### KI-31: F03 rebuild review minors · Minor · Open
+- **Context:** the final review of the F03 rebuild (2026-10-31). Its Critical and Important findings were fixed before merge: a secret in a testId element's name, JSON-escaped secrets in snapshots, login forms rendered after load, a spinner taken for in-place login success, and a path under two identities overwriting its file (D-30).
+- **Capture:**
+  - `attachLabels` runs a `getByLabel` count for every labelable entry before trim. A page with ~1500 labelled inputs at a 3 s budget ends as `capture failed`. Trim first (≤ 200 entries), and degrade (skip labels and testIds) instead of throwing when the budget is spent.
+  - `count()`, `evaluateAll()`, `page.title()` and `page.close()` have no timeout, so a hung renderer could stall a route past its hard budget. Race `captureRoute` against the deadline.
+  - testId uniqueness is counted with `evaluateAll` on the light DOM, while `getByTestId` pierces shadow DOM, so a "unique" id could resolve to two elements.
+- **Login and identities:**
+  - Session loss is exact `finalPath === loginRoute` (D-21). A bounce to `/login/expired` is reported as `redirected`. `isUnderLoginRoute` could be used.
+  - An account named `anonymous` is treated as the anonymous identity. Reserve the name in the config schema.
+  - A `role=alert` that is always visible on the login page makes a slow (> 500 ms) successful submit look failed. Ignore alerts present before the click.
+  - A wrong `fields.password` override waits out the login budget before the specific reason is given.
+  - Requests blocked during login reach `onBlocked` but no route file; late blocks from one page can be attributed to the next route.
+- **Files:** slugs differing only by case collide on case-insensitive filesystems; a very long path can make `writeFile` throw `ENAMETOOLONG` and abort the run.
+- **Next action:** pick these up when F05/F06 start consuming Scout output, or when KI-30's real Candy Swap run hits one.

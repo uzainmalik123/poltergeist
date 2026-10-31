@@ -31,6 +31,39 @@ const SPA_LOGIN = page(
 </script>`,
 );
 
+/** The form appears 300 ms after load, as in a client-rendered app. */
+const CSR_LOGIN = page(
+  'Log in',
+  `<main id="app"></main>
+<script>
+  setTimeout(() => {
+    document.getElementById('app').innerHTML = ${JSON.stringify(loginForm('#'))};
+    document.querySelector('form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const res = await fetch('/login?spa=1', { method: 'POST', body: new URLSearchParams(new FormData(e.target)) });
+      document.getElementById('app').innerHTML = res.ok ? '<p>Welcome</p>' : '<p role="alert">Wrong password</p>';
+    });
+  }, 300);
+</script>`,
+);
+
+/** Submit swaps the form for a spinner while a slow request runs, then shows the result in place. */
+const SPIN_LOGIN = page(
+  'Log in',
+  `<main id="app">${loginForm('#')}</main>
+<script>
+  document.querySelector('form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const body = new URLSearchParams(new FormData(e.target));
+    const app = document.getElementById('app');
+    const form = app.innerHTML;
+    app.innerHTML = '<p>Loading…</p>';
+    const res = await fetch('/login?spa=1&slow=1', { method: 'POST', body });
+    app.innerHTML = res.ok ? '<p>Welcome</p>' : '<p role="alert">Wrong password</p>' + form;
+  });
+</script>`,
+);
+
 const MARKET = page(
   'Market',
   `<h1>Market</h1>
@@ -38,7 +71,7 @@ const MARKET = page(
 <button>Claim Candy Corn</button><button>Claim Candy Corn</button>
 <div data-testid="candy-card">Sour Skulls</div><div data-testid="candy-card">Candy Corn</div><div data-testid="candy-card">Toffee</div>
 <p data-testid="market-status">3 candies left</p>
-<button>${PASSWORD}</button><span data-testid="tid-${PASSWORD}">secret</span>`,
+<button data-testid="secret-btn">${PASSWORD}</button><h2 data-testid="greeting">Hi ${PASSWORD}</h2><span data-testid="tid-${PASSWORD}">secret</span>`,
 );
 
 const TRADE = page(
@@ -92,6 +125,7 @@ export async function startCandyFixture(): Promise<CandyFixture> {
             const form = await readBody(req);
             const ok = form.get('username') === USER && form.get('password') === PASSWORD;
             const cookie = { 'set-cookie': `sid=${SESSION}; Path=/; HttpOnly` };
+            if (url.searchParams.has('slow')) await new Promise((r) => setTimeout(r, 1500));
             if (url.searchParams.has('spa')) {
               res.writeHead(ok ? 200 : 401, ok ? cookie : {});
               return res.end();
@@ -103,6 +137,10 @@ export async function startCandyFixture(): Promise<CandyFixture> {
           return send(res, 200, page('Log in', loginForm('/login', '<p role="alert">Wrong password</p>')));
         case '/spa-login':
           return send(res, 200, SPA_LOGIN);
+        case '/csr-login':
+          return send(res, 200, CSR_LOGIN);
+        case '/spin-login':
+          return send(res, 200, SPIN_LOGIN);
         case '/market':
           return authed ? send(res, 200, MARKET) : redirect(res, 302, '/login');
         case '/trade/new':

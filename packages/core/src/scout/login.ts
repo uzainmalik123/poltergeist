@@ -71,7 +71,10 @@ export async function login(
   const started = Date.now();
   const fail = (reason: string): LoginResult => ({ ok: false, reason: redactor.redact(reason) });
   try {
-    await page.goto(new URL(account.loginRoute, opts.origin).href, { timeout: remaining(deadline, 'login') });
+    const response = await page.goto(new URL(account.loginRoute, opts.origin).href, { timeout: remaining(deadline, 'login') });
+    const status = response?.status();
+    if (status !== undefined && status >= 400) return fail(`login page ${account.loginRoute} returned HTTP ${status}`);
+    await waitForForm(page, account, deadline);
     const username = await field(page, 'username', account);
     const password = await field(page, 'password', account);
     const submit = await field(page, 'submit', account);
@@ -79,18 +82,28 @@ export async function login(
     await password.fill(account.password, { timeout: remaining(deadline, 'login') });
 
     let loaded = false;
+    let inFlight = 0;
     const onLoad = () => (loaded = true);
+    const onRequest = () => inFlight++;
+    const onDone = () => (inFlight = Math.max(0, inFlight - 1));
     page.on('load', onLoad);
+    page.on('request', onRequest);
+    page.on('requestfinished', onDone);
+    page.on('requestfailed', onDone);
     try {
       await submit.click({ timeout: remaining(deadline, 'login') });
       let failingSince: number | undefined;
+      let inPlaceSince: number | undefined;
       for (;;) {
         const state = await readState(page);
         if (state) {
           const { pathname, passwordVisible, alert } = state;
-          const placed = !isUnderLoginRoute(pathname, account.loginRoute) || pathname === account.loginRoute;
-          if (!passwordVisible && placed) return { ok: true };
-          if (loaded || alert !== null) {
+          if (!passwordVisible && !isUnderLoginRoute(pathname, account.loginRoute)) return { ok: true };
+          // In place, the form may only be hidden behind a spinner: success must hold, quiet, for the grace period.
+          const inPlace = !passwordVisible && alert === null && pathname === account.loginRoute && inFlight === 0;
+          inPlaceSince = inPlace ? (inPlaceSince ?? Date.now()) : undefined;
+          if (inPlaceSince !== undefined && Date.now() - inPlaceSince >= GRACE_MS) return { ok: true };
+          if (!inPlace && (loaded || alert !== null)) {
             failingSince ??= Date.now();
             if (Date.now() - failingSince >= GRACE_MS) {
               return fail(
@@ -104,11 +117,25 @@ export async function login(
       }
     } finally {
       page.off('load', onLoad);
+      page.off('request', onRequest);
+      page.off('requestfinished', onDone);
+      page.off('requestfailed', onDone);
     }
   } catch (err) {
     if (err instanceof LoginFailure) return fail(err.message);
     if (err instanceof errors.TimeoutError) return fail(`login timed out after ${Date.now() - started} ms`);
     return fail(`login failed: ${firstLine(err instanceof Error ? err.message : String(err))}`);
+  }
+}
+
+/** Waits until the password field (or its override) is visible, for forms rendered after load. Gives up quietly. */
+async function waitForForm(page: Page, account: AccountConfig, deadline: number): Promise<void> {
+  const target = account.fields?.password;
+  const loc = target ? locateTarget(page, target) : page.locator('input[type=password]');
+  try {
+    await loc.filter({ visible: true }).first().waitFor({ state: 'visible', timeout: remaining(deadline, 'login form') });
+  } catch (err) {
+    if (!(err instanceof errors.TimeoutError)) throw err;
   }
 }
 

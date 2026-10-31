@@ -163,6 +163,19 @@ describe('scout output', () => {
     expect(visits.map((v) => v.identity)).toEqual([...Array(7).fill('anonymous'), 'default', 'default', 'default', 'bad']);
   });
 
+  it('writes one file per identity when a path is scouted twice', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'scout-'));
+    try {
+      const twice = [{ path: '/market', auth: false }, { path: '/market', auth: true }];
+      const r = await scout(browser, load(fixture.origin, twice), { outDir: dir });
+      expect(r.routes.map((x) => x.slug)).toEqual(['market_anonymous', 'market_default']);
+      expect((await readdir(join(dir, 'scout'))).sort()).toEqual(['market_anonymous.json', 'market_default.json']);
+      expect(r.routes.map((x) => x.status)).toEqual(['redirected', 'ok']);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  }, 30000);
+
   it('hashes stably across runs', async () => {
     const small = ROUTES.filter((r) => ['/', '/market', '/trade/new'].includes(r.path));
     const dir = await mkdtemp(join(tmpdir(), 'scout-'));

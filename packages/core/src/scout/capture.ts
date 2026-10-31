@@ -50,6 +50,8 @@ async function collectTestIds(
   );
   const list: TestIdElement[] = [];
   for (const { testId, el } of looked) {
+    // An element whose name holds a secret is dropped, as in the interactive list.
+    if (el && redactor.redact(el.name) !== el.name) continue;
     const entry =
       el && INTERACTIVE_ROLES.has(el.role)
         ? interactive.find((e) => e.role === el.role && e.name === el.name && e.count === 1 && !e.testId)

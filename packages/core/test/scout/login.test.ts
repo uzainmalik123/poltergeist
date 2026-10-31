@@ -98,10 +98,30 @@ describe('login', () => {
     expect(await run(account({ fields }))).toEqual({ ok: true });
   });
 
+  it('reports a login page that returns an HTTP error at once', async () => {
+    const { result, ms } = await timed(() => run(account({ loginRoute: '/missing' })));
+    expect(result).toEqual({ ok: false, reason: 'login page /missing returned HTTP 404' });
+    expect(ms).toBeLessThan(2000);
+  });
+
   it('reports a login page without a form', async () => {
-    const result = await run(account({ loginRoute: '/missing' }));
+    const result = await run(account({ loginRoute: '/' }), 1500);
     expect(result.ok).toBe(false);
-    expect(result.ok ? '' : result.reason).toMatch(/^no username field found/);
+    expect(result.ok ? '' : result.reason).toMatch(/^no username field found on \/$/);
+  });
+
+  it('waits for a login form rendered after load', async () => {
+    expect(await run(account({ loginRoute: '/csr-login' }))).toEqual({ ok: true });
+  });
+
+  it('does not take a spinner in place of the form for success', async () => {
+    const result = await run(account({ loginRoute: '/spin-login', password: 'wrong-pass-13' }));
+    expect(result.ok).toBe(false);
+    expect(result.ok ? '' : result.reason).toContain('Wrong password');
+  });
+
+  it('accepts an in-place login that finishes after a spinner', async () => {
+    expect(await run(account({ loginRoute: '/spin-login' }))).toEqual({ ok: true });
   });
 
   it('times out within the budget', async () => {
