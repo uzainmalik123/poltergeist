@@ -1,0 +1,279 @@
+# Poltergeist: Known Issues
+
+> Open risks, unknowns and problems, worked through one at a time. Take the highest-severity issue that blocks the next TBD feature in [PRD.md](PRD.md).
+> **Severity:** `Blocker` (stops the core loop or the submission) · `Major` (hurts the demo or the score) · `Minor`
+> **Status:** `Open` · `Investigating` · `Resolved` (add the date and what fixed it) · `Accepted` (we live with it)
+> Add new issues at the bottom with the next ID. Don't delete resolved ones.
+>
+> **KI-01 to KI-23 come from the prototype** (`../poltergeist-old`). File and function names in their notes describe the prototype's code, which this repo does *not* contain (D-25). They're kept because the rebuild faces the same problems: treat each prototype note as "how it was solved last time", and re-check it while rebuilding. KI-24 onward are new. References to `SPEC.md`, `SPEC §6.x` or `R<n>.<m>` in those entries now mean `.kiro/specs/poltergeist/design.md` and requirement `<n>.<m>` in `requirements.md` (D-25).
+
+| ID | Issue | Severity | Blocks | Status |
+|---|---|---|---|---|
+| KI-01 | The LLM may not reliably turn EARS criteria into valid, meaningful plans | Blocker | F05 | Open |
+| KI-02 | The oracle problem: an assertion may not truly capture the criterion | Major | F05, F07 | Open |
+| KI-03 | Choosing which route a criterion belongs to | Major | F03, F05 | Open |
+| KI-04 | Candy Swap might not contain any interesting real bugs | Major | F10, demo | Open |
+| KI-05 | 2026 rules, tracks, deadline and "new projects only" are unconfirmed | Blocker | submission, D-02 | Open |
+| KI-06 | Kiro hook schema, MCP config location and Power format are not verified | Major | F11, F13, F18 | Open |
+| KI-07 | Race windows may be too narrow to hit reliably | Major | F06 (Doppelgänger) | Open |
+| KI-08 | Frame streaming from 12 ghosts may be too heavy | Minor | F12 | Open |
+| KI-09 | Judges may not be able to run a live haunting themselves | Major | F15, F21 | Open |
+| KI-10 | Test-account and login handling for every persona | Major | F03, F06 | Open (Scout half solved in prototype, D-20) |
+| KI-11 | Possible LLM refusals or watered-down plans | Minor | F05 | Open |
+| KI-12 | MCP calls that run for a long time (minutes) may time out in the client | Major | F11 | Open |
+| KI-13 | Resetting state between repetitions with concurrent ghosts | Major | F06 | Open |
+| KI-14 | LLM cost and rate limits during development | Minor | F05 | Open |
+| KI-15 | Code written in this playtest repo may not count for the main submission | Major | everything | Resolved (2026-10-31, D-25) |
+| KI-16 | Current Kiro-generated `requirements.md` layout is only verified against one hand-edited sample | Minor | F01 | Open |
+| KI-17 | Forbidden rules only check the first request of a redirect chain; matching uses the raw (percent-encoded, case-sensitive) pathname | Minor | F02, F17 | Open |
+| KI-18 | Guard reporting gaps that stay on the machine or are still blocked | Minor | F06 | Open |
+| KI-19 | A `resetCommand` that backgrounds a long-lived child keeps the pipes open, so reset times out and kills it | Minor | F06 | Open |
+| KI-20 | An unused account with an unset `env:NAME` password keeps the literal `env:NAME` string as its password | Minor | F03, F06 | Open |
+| KI-21 | F02 deferred review minors: hardening and test gaps in config, reset and guard | Minor | F02, F06 | Open (fold into the F02 rebuild) |
+| KI-22 | F03 deferred review minors: login heuristic, redaction and capture hardening, test gaps | Minor | F05, F06 | Open (fold into the F03 rebuild) |
+| KI-23 | Under load, Chromium sometimes reports a stopped redirect hop only as a failure of the original request, so the guard missed it (CI red) | Major | F02, CI (D-19) | Resolved in prototype (D-22); build it in from the start |
+| KI-24 | Eligibility: the idea was prototyped before the window; how to present the rebuild honestly | Major | submission | Open |
+| KI-25 | Glyph rendering of 12 live tiles at 4 fps may be too slow in the browser | Minor | F26, F12 | Open |
+| KI-26 | Fine ASCII glyphs may turn to mush after YouTube compression | Major | F26, video | Open |
+| KI-27 | Poltergeist could look too similar to Reanimator (same team circle, same dither technique) | Minor | F26, D-24 | Open |
+
+---
+
+### KI-01: The LLM may not reliably compile EARS criteria into valid, meaningful plans · Blocker · Open
+- **Why it matters:** this is the core assumption. If plans are invalid or trivial, nothing downstream matters.
+- **Next action (week 1 spike):**
+  1. Take 5 real criteria from the Candy Swap spec.
+  2. Compile 3 personas for each.
+  3. Run each plan 10 times.
+  4. Measure: % valid on the first try, % valid after the retry, % flaky, and human-judged "is this a meaningful test?"
+- **Pass bar:** ≥ 80% valid or justified `notApplicable`, ≤ 20% flaky.
+- **If it fails:**
+  - Shrink the DSL further into per-persona templates. The LLM would only fill slots (route, target, generator, assertion type).
+  - Add few-shot examples to the prompt.
+
+### KI-02: The oracle problem · Major · Open
+- **Problem:** "THE SYSTEM SHALL prevent duplicate claims" needs an assertion the UI may not reveal (e.g. the DB state).
+- **Options:**
+  - (a) `api` assertions against the app's own read endpoints. This is already in the DSL.
+  - (b) An optional app-provided `/__poltergeist/state` probe. This is not planned, and adding it would need a new feature.
+  - (c) Accept `notApplicable`.
+- **Next action:** in the KI-01 spike, count how many criteria need state that isn't visible through the UI or API.
+
+### KI-03: Choosing which route a criterion belongs to · Major · Open
+- **Problem:** criteria rarely name URLs. Sending all scout snapshots blows up the prompt.
+- **Idea:**
+  1. A cheap first pass: the LLM, or a keyword match against route titles and element names, picks ≤ 2 routes per criterion.
+  2. The compiler then gets only those snapshots.
+- **Decide during:** F05.
+- **2026-10-30 (F03 done):** Scout now provides per-route hashes, titles and interactive lists to choose routes from. The decision itself is still F05's.
+
+### KI-04: Candy Swap might not contain any interesting real bugs · Major · Open
+- **Context:** D-10 forbids planting bugs.
+- **Mitigations:**
+  - Build it in a normal, quick hackathon style (naive check-then-write claims, client-only validation in places a typical first pass would have them). That is realistic, but these must not be deliberately inserted.
+  - Point Poltergeist at a second honest app (e.g. one of the team's older hackathon projects) as a backup.
+  - If the hero run is clean, the video tells a "clean bill of health + one flaky" story.
+- **Next action:** after F10, run an early haunting and log what's found.
+
+### KI-05: The 2026 rules are unconfirmed · Blocker · Open
+- **Unconfirmed:**
+  - The categories and the new tracks.
+  - The judging weights.
+  - The team-size limit.
+  - The video length cap.
+  - The deadline (reported as 2026-12-04 2pm PT).
+  - Whether "only new projects count".
+- **Next action:** read kiroween.devpost.com/rules (it was due on 2026-10-30). Update D-02, the PRD timeline and the video plan.
+
+### KI-06: Kiro hook schema, MCP config location and Power format are not verified · Major · Open
+- **Rule:** don't guess. Check the current docs (kiro.dev/docs) and the Kiro IDE/CLI. Reanimator found that some docs still describe older versions.
+- **Next action:**
+  1. Before starting F11, F13 or F18, write the confirmed facts to `docs/kiro-notes.md` (hook triggers, hook file format, MCP settings path, Power manifest).
+  2. Update SPEC §6.8.
+
+### KI-07: Race windows may be too narrow to hit · Major · Open
+- **Mitigation already in the design:** `barrier` + `holdRequests`/`releaseRequests` (SPEC R6.3–R6.4).
+- **Remaining risk:** server-side races that happen after the request arrives, e.g. SQLite serialising writes.
+- **Next action:** prove that a naive check-then-insert endpoint loses the race under a Doppelgänger plan in ≥ 2 of 3 reps.
+
+### KI-08: Frame streaming from 12 ghosts may be too heavy · Minor · Open
+- **Plan:**
+  - CDP screencast at quality ~50.
+  - Downscaled to tile size.
+  - ≤ 4 fps per ghost.
+  - Drop frames when the socket backs up.
+- **Next action:** measure during F12, and fall back to screenshots on each step if needed.
+
+### KI-09: Judges may not be able to run a live haunting · Major · Open
+- **Context:** the rules require a working app URL. Live runs need Chromium plus a running target.
+- **Plan:**
+  - F15 static replay as the URL (clearly labelled as a recording).
+  - A one-command local setup in the README.
+  - F21 hosted sandbox only if time allows.
+- **Next action:** confirm what "working app" means in the 2026 rules (KI-05).
+
+### KI-10: Test-account and login handling · Major · Open
+- **Problem:**
+  - Every context needs to log in.
+  - The Doppelgänger needs the *same* account in two contexts.
+  - The Revenant needs a session to expire.
+- **Plan:**
+  1. Log in once per account during Scout.
+  2. Save Playwright `storageState`.
+  3. Reuse it for the contexts.
+  4. Have a `login` step for explicit flows.
+- **2026-10-30 (F03 grill, D-20):** Scout logs in heuristically (with optional `fields` overrides) and returns each account's `storageState` in memory, never on disk. Still open: how F06 runs a Doppelgänger with two contexts on one account, and how the Revenant expires a session.
+- **2026-10-30 (F03 done):** Scout's half is done (login plus in-memory storageState). F06's Doppelgänger and Revenant handling is still open.
+
+### KI-11: Possible LLM refusals or watered-down plans · Minor · Open
+- **Assessment:** this is low-risk because of D-08 and D-09 (plain QA wording, own app, no payload generation, localhost allowlist).
+- **Next action:** count refusals and empty plans in the KI-01 spike. Expect about zero.
+
+### KI-12: Long-running MCP calls may time out · Major · Open
+- **Problem:** a full haunting takes minutes. MCP clients (including Kiro) may time out on a tool call.
+- **Options:**
+  - (a) `summon_ghosts` starts the run and returns a `runId` immediately, plus a `get_run_status` tool.
+  - (b) Progress notifications.
+  - (c) The default call runs a small subset, e.g. haunted-only or `--reps 1`.
+- **Next action:** check Kiro's MCP timeout (KI-06), then choose. (a) is the safe default.
+
+### KI-13: Resetting state between repetitions · Major · Open
+- **Problem:** `resetCommand` between repetitions is easy when repetitions run one after another. But plans run concurrently *within* a repetition and can interfere with each other (e.g. two different plans claiming the same candy).
+- **Options:**
+  - Partition the seed data per plan (each plan gets its own candy and user namespace).
+  - Or run plans that touch the same route one after another.
+- **Next action:** decide in F06 design. Partitioning is preferred, since Candy Swap can seed N namespaces.
+- **Notes (2026-10-30, F02 done):** `runReset` exists in `@poltergeist/core`. It runs `resetCommand` through the shell in the config file's directory, with a timeout and a process-group kill. *When* it runs and the seed partitioning remain F06 decisions. Still Open.
+
+### KI-14: LLM cost and rate limits during development · Minor · Open
+- **Mitigation:**
+  - Plan cache.
+  - `--recompile` only when needed.
+  - A console spend limit.
+  - Use the smaller model for the KI-03 route-picking pass.
+- **Next action:** add a small spend log like Reanimator's `spend` script.
+
+### KI-15: Playtest code may not count for the main submission · Major · Resolved
+- **Context:** this repo is a playtest. 2026 reportedly accepts only new projects, and the main project has to show Kiro usage from day one.
+- **Plan:**
+  - Treat this repo as a prototype for learning.
+  - Rebuild in the main repo with specs in `.kiro/specs/` and history that starts inside the hacking window.
+  - Copy *decisions and docs*, and re-implement the code there.
+- **Next action:** confirm the eligibility wording in the 2026 rules (KI-05).
+- **Resolved (2026-10-31, D-25):** fresh repo with history inside the window. Docs were rewritten and code is rebuilt, not ported. Presenting this honestly is now KI-24.
+
+### KI-16: Current Kiro-generated `requirements.md` layout is only verified against one sample · Minor · Open
+- **Problem:** F01's parsing rules (D-16) are based on the Reanimator spec, which a person edited, and on kiro.dev's one-line EARS template. From memory, without checking it this session: newer Kiro output uses `**User Story:**`, `#### Acceptance Criteria`, a `## Glossary` and `THE <Component_Name> SHALL`. Its tasks cite `_Requirements: 1.1, 2.3_`. It is unknown whether Kiro ever writes criteria as bullets or with explicit IDs.
+- **Blocks:** F01's robustness on real user specs.
+- **Next action:** generate a fresh spec with Kiro (main project, or Candy Swap in F10) and add it as an F01 fixture. If it uses bullets or explicit IDs, add a decision that extends D-16.
+- **Notes (2026-10-30, F01 done):** the parser reports layouts it can't read as warnings instead of dropping them silently: `no-criteria` (e.g. bulleted criteria), `ignored-list` (a second numbered list), `unrecognized-heading` (`Requirement #3`) and `empty-spec`. Deferred minors from the review: suffixes after 26 duplicate requirement numbers; `Requirement 1a` parsing as 1; code blocks and tables inside a criterion not hashed; `IF-Match` read as IF; a lowercase `the` subject not split when there's no comma; specs inside a blockquote.
+
+
+### KI-17: Forbidden rules only check the first request of a redirect chain · Minor · Open
+- **Problem:** a 307/308 to a forbidden path on an allowed host isn't blocked, because only the first request of a chain is matched. Matching also uses the raw (percent-encoded, case-sensitive) pathname, so `/api/%61dmin` slips past a rule for `/api/admin*`.
+- **Blocks:** F02's completeness and F17 (steering rules).
+- **Next action:** decode the path once before matching, and consider the proxy/`requestfailed` path for redirect hops. Revisit when F17 lands.
+
+### KI-18: Guard reporting gaps that stay on the machine or are still blocked · Minor · Open
+- **Problem:**
+  - WebSockets from dedicated Workers bypass `routeWebSocket`. The dead proxy blocks them, but they aren't reported.
+  - ~~Chromium implicitly bypasses the proxy for the whole loopback range on redirect hops (e.g. `127.0.0.2` is reachable and unreported).~~ **Resolved 2026-10-30:** this was not machine-local: the implicit bypass also covers link-local (`169.254.0.0/16`, `fe80::/10`), so a redirect could reach cloud metadata at `169.254.169.254` directly. Fixed by putting `<-loopback>` first in the bypass list (D-18); `127.0.0.2` and `169.254.169.254` hops now fail with `ERR_PROXY_CONNECTION_FAILED`. Failures the guard can't confirm are reported as `leak`.
+  - Redirect-hop reports arrive asynchronously via `requestfailed`.
+  - `about:blank` popups hang on fetch once a route is installed (nothing leaves the machine).
+  - The per-context proxy is only verified on Linux Chromium.
+- **Blocks:** F06 (runner robustness and block reporting).
+- **Next action:** F06 adds a step timeout and reports worker websockets via page/worker events if needed. Do the cross-platform check before the demo.
+
+### KI-19: A `resetCommand` that backgrounds a long-lived child keeps the pipes open · Minor · Open
+- **Problem:** a reset command such as `npm run dev &` leaves a child holding stdout/stderr. `runReset` waits for `close`, so it reports `timeout`, and the process-group SIGKILL then kills the user's server.
+- **Blocks:** F06 (reset between repetitions).
+- **Next action:** decide in F06 whether to resolve on `exit` and detach the pipes, or document that `resetCommand` must not start servers.
+
+### KI-20: An unused account with an unset `env:NAME` password keeps the literal `env:NAME` string · Minor · Open
+- **Problem:** `loadConfig` only fails on a missing env var for accounts that a route uses. An unused account keeps `env:NAME` as its password in `LoadedConfig`, so a later login step (F03/F06, e.g. Revenant `login {account}`) could silently log in with that string.
+- **Blocks:** F03, F06 (login steps that reference accounts).
+- **Next action:** when login steps reference accounts, validate and resolve the referenced accounts the same way routes do.
+- **2026-10-30 (F03):** Scout only logs in to accounts that routes use, and `loadConfig` already resolves those. Scout also refuses any password still shaped like `env:NAME` with an unset variable. Still open for F06's `login {account}` step.
+- **2026-10-30 (F03 done):** Scout's pre-check is done (`ConfigError` for an unset env password on a route-used account). F06's `login {account}` is still open.
+
+### KI-21: F02 deferred review minors · Minor · Open
+- **Context:** F02's task reviews and final review (2026-10-30) left these minor items. None lets traffic leave the machine, and the serious ones are already KI-17 to KI-20.
+- **Hardening:**
+  - Reset output is cut to the last 64 KB *before* redaction, so part of a secret can survive at the cut (`config/reset.ts`). Redact first, then trim.
+  - `runReset` uses `process.env`, not the `env` passed to `loadConfig`. A caller that resolves secrets from a custom env gets a reset without them.
+  - `guardContextOptions` doesn't validate its entries. Config entries are validated by the schema, but a direct caller passing `,`, `<` or `*` could widen the proxy bypass. Validate there too, or make it internal.
+  - The schema's IPv6 pattern for `allowedHosts` still accepts malformed forms such as `:::` and `1:2:3`. They never match a real host, so this fails closed.
+  - Validation issue *paths* are not redacted, only messages. This only matters if a secret is used as an account name.
+  - `matchForbidden` recompiles each rule's regex on every request. Precompile once per rule list if request volume matters.
+- **Guard API (F06):**
+  - `BlockedRequest` doesn't carry the browser's `errorText`, which F06 will want for diagnosing `leak` reports.
+  - A page navigating away mid-redirect (`net::ERR_ABORTED`) is reported as `leak`. This is conservative (a false alarm, never a false all-clear), but F06 should expect it.
+- **Test gaps:**
+  - No test redirects through `localhost` or `[::1]`. A reviewer probe showed both work, but a change to the bypass ordering could break them silently.
+  - Some negative assertions (`blocked` is empty) run right away, while blocked-request reports now arrive asynchronously.
+  - Untested: IPv4 and `::1` entries in `allowedHosts`; bounds on `reps` and `resetTimeoutMs`; empty `resetCommand`; strictness inside nested objects; a route naming a missing account; a short or common-word literal password; `loadConfig` with an empty env var; userinfo-spoofed (`http://localhost@evil.com`) and trailing-dot targets; the reset 64 KB trim, 20-line tail and `spawn` failure; first-match-wins and lowercase methods in `forbidden`; a limiter task that throws synchronously; a guard test with a non-empty `allowedHosts`.
+  - The secret-in-reset-output test uses a literal `echo pw=hunter22`, not `$POLTERGEIST_PW` through the environment.
+- **Next action:** pick up the hardening items when F06 starts consuming the guard and `runReset`. Add the tests opportunistically when touching each module.
+
+### KI-22: F03 deferred review minors · Minor · Open
+- **Context:** F03's task reviews and final review (2026-10-30) left these minor items. The serious ones were fixed before merge (see D-21).
+- **Login:**
+  - The success heuristic (left `loginRoute` or no password field) can false-positive (for example `/login/failed`). A failed login also waits out the full `loginTimeoutMs`. Routes that bounce back to the login page are still marked `authFailed`.
+  - The `waitForURL` catch swallows every error, not only timeouts.
+  - `fields` overrides skip `count()`, so a stale override burns the budget and gives a generic reason.
+- **Redaction and URLs:**
+  - Percent-encoded secrets in URLs evade the substring redaction.
+  - The blocked request's `host` is not redacted (only `url` is).
+  - A target with userinfo (`http://u:p@host`) is still accepted.
+- **Capture:**
+  - A capture error that isn't a timeout is not trimmed to its first line in the reason.
+  - The aria-name unescape covers only `\"` and `\\`.
+  - Duplicate testIds attach to the first match only, and testId-only entries are appended after the cap ordering.
+  - `captureRoute` does one `ariaSnapshot` per testId (up to 200), serially, with no per-id try/catch, so one detached element aborts the capture.
+  - The 250 ms testId timeout can drop testIds on slow pages (they degrade to role and name).
+  - The trim cut can end in the middle of an escape (`\"`), and both collapse rules can apply to one line. `KEY_OVERHEAD=28` is hard-coded in `trim.ts`.
+  - `routeHash` includes `count`, which the brief didn't document (kept on purpose).
+- **Test gaps:**
+  - No test for quoted names over 80 characters; the slug char-class test doesn't assert exact output; the schema reject tests were green before the implementation.
+  - Login: the deadline path, the SPA success branch with no password field, a reason that never contains the password, fixture `close()` with a `/slow` request open, and `locateTarget` ignoring the login result.
+  - The `page could not be reopened` branch is untested. The `/huge` end-to-end assertion is loosened (the budget is proven by unit and `/cards` tests). The `vi.mock` factory reads a module-level `pagesSeen` (fragile).
+- **Next action:** pick up the login and redaction items when F06 starts using Scout's output, and the rest opportunistically.
+
+### KI-23: Under load, Chromium sometimes reports a stopped redirect hop only as a failure of the original request · Major · Resolved
+- **What happened:** the first two CI runs after the F03 merge (41101768063 and 41171915551, 2026-10-30/31) failed in `guard.test.ts` › "EventSource redirect to a third-party host is blocked": `blocked` stayed empty. The page saw `'error'`, so the request was stopped.
+- **Wrong first diagnosis (2026-10-31):** I took it for a late report and raised `expect.poll`'s timeout to 5 s in `vitest.config.ts`. CI failed again with the longer timeout. The timeout change stays (harmless), but it was not the fix.
+- **Real cause:** reproduced locally by pinning the guard and scout tests to one CPU (4 of 5 runs failed). An event log showed Chromium emitting `requestfailed` for the original allowlisted request (`127.0.0.1/redirect`, `net::ERR_PROXY_CONNECTION_FAILED`) and never emitting the hop to `example.com`. The guard skipped failures on allowlisted hosts, so `onBlocked` was never called. The subresource-redirect test failed the same way. The block worked; the report was lost. F03's extra parallel browser tests made the load common enough to show it.
+- **Resolved (2026-10-31, D-22):** an allowlisted request that fails with `net::ERR_PROXY_CONNECTION_FAILED` is reported with the new reason `redirect` (its `url` is the original request; the hop's target is unknown). Only a redirect hop can reach the dead proxy, since allowlisted hosts bypass it. Two browser-free tests drive the `requestfailed` listener directly. The redirect browser tests accept exactly one report in either form. The one-CPU stress run then passed 6 of 6.
+- **Still open:** the `leak` test (guard without the dead proxy) could see the same Chromium variant, where a direct-hop failure lands on the original request and isn't reported. That only matters if the guard is installed without `newGuardedContext`, which D-18 forbids.
+
+### KI-24: Eligibility of a prototyped idea · Major · Open
+- **Context:** F01–F03 were built in a private repo before the window opened (`../poltergeist-old`, first commit 2026-10-30). This repo starts fresh (D-25).
+- **Risk:** a judge or the rules may see prior work as disqualifying, or may see a fresh repo with very detailed docs on day one and wonder where they came from.
+- **Plan:**
+  - Keep `../poltergeist-old` private and don't publish or link it.
+  - Don't port code, so every line in this repo is written inside the window, and the git history shows it.
+  - In the Devpost write-up, say plainly: "We explored the idea in a throwaway prototype before the event, then rebuilt Poltergeist from scratch during the hacking period. The design docs carried over; the code did not."
+  - Most hackathons allow planning before the event but not submitting pre-built code. Confirm this in the 2026 rules (KI-05).
+- **Next action:** read the 2026 rules' eligibility and "new project" wording, and update this entry.
+
+### KI-25: Glyph rendering performance · Minor · Open
+- **Problem:** 12 tiles × 4 fps × about 96×40 glyphs is about 180k glyphs per second, on top of JPEG decoding.
+- **Plan:**
+  - Pre-render a glyph atlas per colour step and blit with `drawImage`.
+  - Compute luminance on a downscaled `OffscreenCanvas`, ideally in a Worker.
+  - Drop frames rather than queue them.
+- **Next action:** benchmark in F26's demo page with 12 synthetic tiles.
+
+### KI-26: ASCII may turn to mush after video compression · Major · Open
+- **Problem:** YouTube compresses fine, high-contrast detail hard, and dense glyphs on black are a worst case. The video is the main thing judges see.
+- **Plan:**
+  - Use glyph cells of at least 8×16 px on screen at 1080p, and consider uploading at 1440p or 4K (YouTube gives higher-res uploads a better codec and bitrate).
+  - Avoid single-pixel strokes in sprites.
+  - Test early: record 20 s of the F26 demo page, upload it unlisted and look at it on a phone.
+- **Next action:** part of F26's Done-when.
+
+### KI-27: Looking too similar to Reanimator · Minor · Open
+- **Problem:** Reanimator (a friend's Kiroween entry) uses the same Bayer dither technique for its dot-matrix art. Judges could see two entries with a shared look.
+- **Mitigation:** D-24's differences: characters instead of dots, green ghosts instead of purple magic, a terminal instead of a cinematic necromancer, and a different typeface. No shared assets.
+- **Next action:** once F26's demo page exists, put screenshots side by side with Reanimator's prototypes and check they read as different.
+
