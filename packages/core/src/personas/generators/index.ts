@@ -1,4 +1,5 @@
 import { UnknownGeneratorError } from '../errors.js';
+import { fastcheckValue } from './fastcheck.js';
 import { emoji, empty, long, plain, rtl, whitespace } from './lists.js';
 import { assertUint32 } from './mix.js';
 import { naughty } from './naughty.js';
@@ -14,10 +15,6 @@ export type GeneratorInfo = { readonly id: GeneratorId; readonly description: st
 
 type Generator = (seed: number, index: number) => string;
 
-const notImplemented: Generator = () => {
-  throw new Error('not implemented');
-};
-
 /** Descriptions are shown to the LLM, so they use plain QA wording (D-09). */
 const GENERATORS: ReadonlyMap<GeneratorId, { description: string; fn: Generator }> = new Map([
   ['plain', { description: 'Short ordinary alphanumeric text, for filling a field with a valid everyday value.', fn: plain }],
@@ -27,7 +24,7 @@ const GENERATORS: ReadonlyMap<GeneratorId, { description: string; fn: Generator 
   ['long', { description: 'A 10,000-character string, for length limits and layout overflow.', fn: long }],
   ['empty', { description: 'An empty string.', fn: empty }],
   ['whitespace', { description: 'Whitespace-only values, including tabs, newlines, non-breaking and zero-width spaces.', fn: whitespace }],
-  ['fastcheck', { description: 'A random but reproducible Unicode string of up to 64 characters.', fn: notImplemented }],
+  ['fastcheck', { description: 'A random but reproducible Unicode string of up to 64 characters.', fn: fastcheckValue }],
 ]);
 
 const INFO: readonly GeneratorInfo[] = Object.freeze(

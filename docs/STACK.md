@@ -85,6 +85,8 @@ The prototype (2026-10-30) installed and verified these versions. Reuse them unl
 | playwright-core | 1.64.1 | core | yes |
 | ws | 8.22.0 | core dev (guard test fixture) | yes |
 | @types/ws | 8.18.2 | core dev | yes |
+| fast-check | 4.10.2 | core | yes |
+| Big List of Naughty Strings | commit `db33ec7` (vendored, MIT) | core `src/personas/generators/data/` | yes |
 
 ## Local setup (target)
 
