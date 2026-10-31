@@ -36,7 +36,8 @@
 | D-28 | `main` is protected by a GitHub ruleset: changes land only through PRs with a green `health` check | Accepted |
 | D-27 | Spec Reader edge-case rulings and API (F01, extends D-16): `parseSpec`/`parseRequirements`, warning codes, KI-16 edge cases | Accepted |
 | D-29 | F02 rebuild rulings (extends D-17, D-18, D-22): KI-21 folded in, internal bypass list, decoded `forbidden` paths, userinfo targets rejected, unresolved unused accounts dropped, reset resolves on `exit` | Accepted |
-| D-30 | F04 persona and generator rulings: registry-derived ids, sprite reference, plain-QA `behaviour`, `STEP_TYPES` in F04, eight generators incl. `plain`, uint32 seed/index, BLNS minus ten injection/vulnerability sections | Accepted |
+| D-30 | F03 rebuild rulings (extends D-20, D-21): fixture-first until F10 lands, KI-22 folded in, stricter login success with fail-fast and a quiet in-place check, one file per identity for repeated paths, JSON-escaped secrets redacted, testId attach-or-list, HTTP ≥ 400 is `unreachable`, measured trim invariant, sha256 hashes, slug collision suffix | Accepted |
+| D-31 | F04 persona and generator rulings: registry-derived ids, sprite reference, plain-QA `behaviour`, `STEP_TYPES` in F04, eight generators incl. `plain`, uint32 seed/index, BLNS minus ten injection/vulnerability sections | Accepted |
 
 ---
 
@@ -320,7 +321,20 @@
   - **Left to F06:** worker WebSockets and `about:blank` popups (KI-18).
 - **Consequences:** KI-19, KI-20 and KI-21 are resolved by F02; KI-17 stays open for redirect hops only. F06 can rely on `LoadedConfig.accounts` containing only usable accounts.
 
-### D-30: F04 persona and generator rulings (extends D-04, D-13)
+### D-30: F03 rebuild rulings (extends D-20, D-21)
+- **Context:** grilling F03 for the rebuild (2026-10-31). F10 (Candy Swap) is built in Kiro by the team and doesn't exist yet, but F03's Done-when names the real app. LESSONS § F03 and KI-22 listed items the prototype deferred. The user asked to accept the recommended answers.
+- **Decision:**
+  - **Fixture first (this cycle only):** F03 is built and tested against a tests-only `node:http` app shaped like Candy Swap (`packages/core/test/scout/candy-fixture.ts`). This re-instates D-20's fixture bullet until F10 lands; the real Candy Swap Done-when check is tracked in KI-30.
+  - **KI-22 in the first pass:** every item in LESSONS § F03 "Do these in the first pass" is built in this cycle.
+  - **Login success:** a login page answering HTTP ≥ 400 fails at once. Scout waits (within the budget) for the password field to be visible, for forms rendered after load. After submit, login succeeds when no visible password field remains **and** the page is off the `loginRoute` subtree (`/login`, `/login/…`), or, for an in-place SPA login, stays exactly on `loginRoute` with no password field, no alert and no request in flight for 500 ms (so a spinner that hides the form isn't taken for success). It fails fast, after a 500 ms grace, once a page load happened or a `role=alert` is visible without success. Only Playwright's `TimeoutError` counts as a timeout. `fields` overrides must `count() === 1`, otherwise a specific reason is given at once. Reasons are redacted. Session-lost detection on routes stays exact pathname equality (D-21).
+  - **Capture:** elements are parsed from the unredacted `ariaSnapshot()`; any element whose name changes under redaction is dropped. A label is emitted only when exact `getByLabel` resolves exactly one element. testIds are looked up concurrently (per-id try/catch, 250 ms). Duplicate or redaction-changed testIds are dropped. A testId on a unique interactive element is attached to it; every other resolving testId goes to a separate `testIds` list.
+  - **Statuses:** a failed `goto` or an HTTP status ≥ 400 is `unreachable`. A capture failure is `unreachable` with `capture failed: …`, and the next route gets a fresh page in the same context.
+  - **Trim:** `TRIM_CHARS = 16000`. The invariant `JSON.stringify({interactive, testIds, snapshot}).length <= TRIM_CHARS` is measured (no hard-coded key overhead). Lists ≤ 200 entries and ≤ 75%. Long names and text are collapsed on decoded values and re-encoded, so a cut never lands mid-escape.
+  - **Hashes and slugs:** sha256 over canonical JSON, 16 hex. `routeHash` covers status, interactive elements (with `count`) and testIds. A path configured under two identities gets one file per identity (`market_anonymous`, `market_default`). Paths whose slugs still collide all get `-<first 6 hex of sha256(key)>`.
+  - **Redaction (extends D-29):** the `Redactor` also scrubs each secret's JSON-escaped form, because aria snapshots quote names. testIds whose element name holds a secret are dropped like interactive entries.
+  - **API:** `scout(browser, loaded, { outDir, routeTimeoutMs?, loginTimeoutMs?, onRoute?, onBlocked? })` → `{ routes, scoutHash, sessions }` in `packages/core/src/scout/`.
+- **Consequences:** F03 is marked Done for the fixture only until KI-30 is closed. F05 can rely on every emitted label and testId resolving, and on `testIds` for non-interactive targets (status messages).
+### D-31: F04 persona and generator rulings (extends D-04, D-13)
 - **Context:** grilling F04 (2026-10-31). The user asked to accept the recommended answers.
 - **Decision:**
   - **Ids:** `PersonaId` comes from the registry (`wraith`, `banshee`, `doppelganger` today). F16 and F20 add entries; no id exists without a definition. Unknown ids (including `__proto__`, `toString`, wrong case) throw `UnknownPersonaError` / `UnknownGeneratorError`.
@@ -331,4 +345,4 @@
   - **Naughty strings:** BLNS `blns.txt` is vendored verbatim at commit `db33ec7` with its MIT licence (`src/personas/generators/data/`). Ten sections are excluded as exploit payloads (Script, SQL, Server Code, Command (Ruby), XXE and jinja2 injection, File Inclusion, Known CVEs, Terminal escape codes, iOS Vulnerabilities), per D-08 and the scrapped F25. 241 strings remain. Kept on purpose: `Human injection` (harmless prose) and `Unwanted Interpolation` (format-string text such as `%n` and `${HOME}`, which shows up as display bugs, not exploits). The final review caught the jinja2 section, which had been missed.
   - **Allocations:** Wraith `goto click dblclick fill press back reload wait` + `plain`, 1 actor. Banshee `goto click fill press wait` + all generators except `plain`, 1 actor. Doppelgänger `goto click fill press reload wait barrier holdRequests releaseRequests` + `plain`, 2 actors. `throttle`, `login` and `logout` are left to F16.
   - **Data:** all persona and generator data is deep-frozen.
-- **Consequences:** F05 imports `STEP_TYPES`, `PERSONA_IDS` and `GENERATOR_IDS` for its schema and shows `behaviour` and descriptions in the prompt. Whether DSL `literal` inputs survive is open (KI-30). Steering flags (Req 4.3) remain F17.
+- **Consequences:** F05 imports `STEP_TYPES`, `PERSONA_IDS` and `GENERATOR_IDS` for its schema and shows `behaviour` and descriptions in the prompt. Whether DSL `literal` inputs survive is open (KI-32). Steering flags (Req 4.3) remain F17.

@@ -75,12 +75,19 @@ type Criterion = { id: string; requirement: string; requirementId: string; text:
 type EarsClauses = { kind: EarsKind; trigger?: string; precondition?: string; subject?: string; response: string };
 type Target = { role: string; name: string } | { label: string } | { text: string } | { testId: string };   // D-15
 type Persona = { id: PersonaId; name: string; tagline: string; behaviour: string; allowedSteps: StepType[];
-                 generators: GeneratorId[]; actors: 1 | 2; sprite: string };   // D-30: sprite is a Costume Kit key
-type GeneratorId = 'plain' | 'naughty' | 'emoji' | 'rtl' | 'long' | 'empty' | 'whitespace' | 'fastcheck';      // D-30
+                 generators: GeneratorId[]; actors: 1 | 2; sprite: string };   // D-31: sprite is a Costume Kit key
+type GeneratorId = 'plain' | 'naughty' | 'emoji' | 'rtl' | 'long' | 'empty' | 'whitespace' | 'fastcheck';      // D-31
 // STEP_TYPES (the §6 step list) and both id lists live in core/personas; F05 builds its zod enums from them.
 type PairVerdict = 'haunted' | 'flaky' | 'inconclusive' | 'clean' | 'notApplicable' | 'uncompilable';
 type BlockReason = 'host' | 'forbidden' | 'scheme' | 'redirect' | 'leak';                                  // D-18, D-22
+type RouteScout = { path: string; slug: string; identity: string;                                          // D-20, D-21, D-30
+                    status: 'ok' | 'redirected' | 'unreachable' | 'authFailed'; reason?: string; finalPath?: string;
+                    title?: string; settled: boolean; interactive: { role: string; name: string; count: number;
+                    label?: string; testId?: string }[]; testIds: { testId: string; role?: string; name?: string }[];
+                    snapshot: string; snapshotFull: string; trimmed: boolean; routeHash: string; blocked: BlockedRequest[] };
 ```
+
+Scout is `scout(browser, loaded, { outDir, routeTimeoutMs?, loginTimeoutMs?, onRoute?, onBlocked? })` → `{ routes, scoutHash, sessions }` (`packages/core/src/scout/`). `sessions` holds each account's `storageState` in memory only. Every emitted `label` and `testId` resolves to exactly one element, and `JSON.stringify({interactive, testIds, snapshot})` fits 16000 characters.
 
 ## 5. Network guard (D-17, D-18, D-22)
 

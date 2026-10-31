@@ -2,7 +2,8 @@ export const REDACTED = '[REDACTED]';
 
 /**
  * Scrubs resolved secrets from text (Req 2.8). Every non-empty secret is redacted, however short:
- * safety beats readability. The percent-encoded form is scrubbed too, for secrets that end up in URLs.
+ * safety beats readability. The percent-encoded form is scrubbed too, for secrets that end up in URLs, and
+ * the JSON-escaped form, for secrets inside quoted names in aria snapshots.
  */
 export class Redactor {
   readonly #secrets: string[];
@@ -13,6 +14,7 @@ export class Redactor {
       if (s === '') continue;
       all.add(s);
       all.add(encodeURIComponent(s));
+      all.add(JSON.stringify(s).slice(1, -1));
     }
     this.#secrets = [...all].sort((a, b) => b.length - a.length);
   }

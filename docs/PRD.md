@@ -20,7 +20,7 @@
 | 1 | F01 | Spec Reader | High | Done | 0 |
 | 2 | F02 | Target Config & Safety Allowlist | High | Done | 0 |
 | 3 | F10 | Candy Swap Demo Target (built in Kiro) | High | TBD | F01 (to check its spec) |
-| 4 | F03 | Route Scout | High | TBD | F02, F10 |
+| 4 | F03 | Route Scout | High | Done (fixture; real Candy Swap check pending, KI-30) | F02, F10 |
 | 5 | F04 | Core Personas & Input Generators | High | Done | n/a |
 | 6 | n/a | **KI-01 spike** (compile + run 5 criteria × 3 personas) | High | TBD | F01, F03, F04 |
 | 7 | F05 | Ghost Compiler (LLM → Plan DSL) | High | TBD | spike |
@@ -139,7 +139,9 @@
   - It may use the costume palette but doesn't need to.
 - **Done when:** the app runs, reset is deterministic, and F01 parses its spec with zero warnings (or each warning becomes a KI-16 note).
 
-### F03: Route Scout · High · TBD
+### F03: Route Scout · High · Done (fixture)
+
+> 2026-10-31: done against a tests-only app shaped like Candy Swap, because F10 isn't built yet (D-30). Plan `docs/plans/2026-10-31-F03-route-scout.md`. Every KI-22 item was built in the first pass. The scout tests pass 3 of 3 pinned to one CPU (`npm run test:guard:1cpu`). **Still to do:** rerun the Done-when against the real Candy Swap once F10 lands (KI-30).
 
 **Owns:** visiting configured routes as each identity, the login heuristic and `fields` overrides, accessibility-snapshot capture, interactive-element lists, trimming, per-route and run-level hashes, and writing `scout/<slug>.json`. Implements Requirement 3.
 **Not this feature:** deciding what to click (F05) · running plans (F06).
@@ -450,4 +452,5 @@ Implements Requirement 12.
   - Prototype lessons linked for F01–F03.
 - 2026-10-31: **F01 Done** (D-27). **Scaffold Done**: CI is green on GitHub Actions (PR #1).
 - 2026-10-31: **F02 Done** (D-29). CI now installs Chromium for the guard tests.
-- 2026-10-31: **F04 Done** (D-30). Three core personas, eight deterministic generators (adds `plain`), vendored BLNS without injection sections. KI-30 opened (typed inputs).
+- 2026-10-31: **F03 Done against a fixture** (D-30). F03 was built before F10; the real Candy Swap check is tracked in KI-30.
+- 2026-10-31: **F04 Done** (D-31). Three core personas, eight deterministic generators (adds `plain`), vendored BLNS without injection sections. KI-32 opened (typed inputs).

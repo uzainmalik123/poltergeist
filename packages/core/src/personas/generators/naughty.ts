@@ -3,7 +3,7 @@ import { pick } from './lists.js';
 
 /**
  * Sections of the Big List of Naughty Strings we leave out. They are exploit payloads, and
- * Poltergeist is a QA tool, not a security scanner (D-08, F25 scrapped, D-30).
+ * Poltergeist is a QA tool, not a security scanner (D-08, F25 scrapped, D-31).
  */
 export const EXCLUDED_SECTIONS: readonly string[] = Object.freeze([
   'Script Injection',

@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript 5.9.3, Node ≥ 22, fast-check 4.10.2 (runtime dependency, pinned exactly), vitest 4.1.12.
 
-**Spec:** `.kiro/specs/poltergeist/requirements.md` Req 4.1–4.2 · `design.md` §4 (`Persona` type), §6 (step list), §7 (persona table) · `docs/PRD.md` F04 · `docs/DECISIONS.md` D-04, D-08, D-09, D-13, D-30 (written in Task 6) · grill decisions Q1–Q13 (this session).
+**Spec:** `.kiro/specs/poltergeist/requirements.md` Req 4.1–4.2 · `design.md` §4 (`Persona` type), §6 (step list), §7 (persona table) · `docs/PRD.md` F04 · `docs/DECISIONS.md` D-04, D-08, D-09, D-13, D-31 (written in Task 6) · grill decisions Q1–Q13 (this session).
 
 ## Global Constraints
 
@@ -301,9 +301,9 @@ Shared test helper (inline in each test that needs it, it's two lines): `THEME_W
 ### Task 6: Spec and docs
 
 **Files:**
-- Modify: `.kiro/specs/poltergeist/requirements.md` (4.1: "ASCII sprite" → "sprite reference resolved by the Costume Kit", and add "a one-line tagline"), `.kiro/specs/poltergeist/design.md` §4 (`Persona` type gains `tagline`, and `sprite: string` becomes a sprite id; add `GeneratorId` and a note that `STEP_TYPES` lives in `core/personas`), `docs/DECISIONS.md` (D-30), `docs/KNOWN_ISSUES.md` (KI-30), `docs/PRD.md` (F04 → Done + changelog), `.kiro/specs/poltergeist/tasks.md` (tick F04), `AGENTS.md` (current state)
+- Modify: `.kiro/specs/poltergeist/requirements.md` (4.1: "ASCII sprite" → "sprite reference resolved by the Costume Kit", and add "a one-line tagline"), `.kiro/specs/poltergeist/design.md` §4 (`Persona` type gains `tagline`, and `sprite: string` becomes a sprite id; add `GeneratorId` and a note that `STEP_TYPES` lives in `core/personas`), `docs/DECISIONS.md` (D-31), `docs/KNOWN_ISSUES.md` (KI-32), `docs/PRD.md` (F04 → Done + changelog), `.kiro/specs/poltergeist/tasks.md` (tick F04), `AGENTS.md` (current state)
 
-- [ ] **Step 1: Write D-30** "F04 persona and generator rulings":
+- [ ] **Step 1: Write D-31** "F04 persona and generator rulings":
   - persona ids come from the registry;
   - sprite is a reference;
   - `name`/`tagline` are UI-only and `behaviour`/descriptions are plain QA (tested);
@@ -315,7 +315,7 @@ Shared test helper (inline in each test that needs it, it's two lines): `THEME_W
   - the per-persona allocation.
 
   Add it to the summary table too.
-- [ ] **Step 2: Write KI-30** "Typed inputs (numbers, emails, dates) may be needed for valid form fills, and DSL `literal` input vs D-04 is unresolved". Minor, blocks F05 and the spike. Next action: the KI-01 spike counts how often plans needed a typed value. Add it to the summary table.
+- [ ] **Step 2: Write KI-32** "Typed inputs (numbers, emails, dates) may be needed for valid form fills, and DSL `literal` input vs D-04 is unresolved". Minor, blocks F05 and the spike. Next action: the KI-01 spike counts how often plans needed a typed value. Add it to the summary table.
 - [ ] **Step 3: Update PRD, tasks.md and AGENTS.md** (F04 Done, with a changelog line).
 - [ ] **Step 4: Run `npm run health`.** Expected: exit 0.
-- [ ] **Step 5: Commit** `F04: close cycle (spec, D-30, KI-30, PRD, tasks, AGENTS)`.
+- [ ] **Step 5: Commit** `F04: close cycle (spec, D-31, KI-32, PRD, tasks, AGENTS)`.

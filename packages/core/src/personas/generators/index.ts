@@ -39,7 +39,7 @@ export function listGenerators(): readonly GeneratorInfo[] {
   return INFO;
 }
 
-/** The same (id, seed, index) always gives the same value (Req 4.2). Seed and index are uint32 (D-30). */
+/** The same (id, seed, index) always gives the same value (Req 4.2). Seed and index are uint32 (D-31). */
 export function generate(id: string, seed: number, index: number): string {
   assertUint32('seed', seed);
   assertUint32('index', index);

@@ -14,7 +14,7 @@ It reads a Kiro spec (`.kiro/specs/<name>/requirements.md`, EARS-style criteria)
 
 ## Current state (2026-10-31)
 
-- **Scaffold, F01 Spec Reader, F02 Config & Safety and F04 Personas & Generators are built** (`packages/core/src/{spec,config,safety,personas}/`, D-27, D-29, D-30). `npm run health` is green locally and in CI. **Next: F10 (in Kiro)**, then F03, then the KI-01 spike.
+- **Scaffold, F01 Spec Reader, F02 Config & Safety, F03 Route Scout and F04 Personas & Generators are built** (`packages/core/src/{spec,config,safety,scout,personas}/`, D-27, D-29, D-30, D-31). F03 was built against a Candy-shaped fixture because F10 isn't built yet; its real Candy Swap check is KI-30. `npm run health` is green locally and in CI. **Next: F10 (in Kiro)**, then the KI-30 check, then the KI-01 spike.
 - **Escapes:** keep invisible or bidi characters (`\u200B`, `\u202E`, NBSP and so on) as `\uXXXX` escapes in source, never as literals. eslint's `no-irregular-whitespace` rejects literals, and they're unreadable in review.
 - **The prototype** lives at `../poltergeist-old` (private, built before the hacking window). It is **read-only and off-limits for code**: don't copy, port or open `../poltergeist-old/packages/` while implementing. Everything worth keeping is already in `docs/DECISIONS.md`, `docs/KNOWN_ISSUES.md` and `docs/LESSONS.md`. This keeps every line of code inside the hacking window (KI-24).
 - **`.kiro/` is real** in this repo. It holds the spec (`.kiro/specs/poltergeist/`) and steering. Commit it, and never gitignore it.
@@ -144,7 +144,7 @@ Each PRD feature (or KNOWN_ISSUES item) goes through this cycle. The skills are 
 ## Do first (as of 2026-10-31)
 
 1. **KI-05 / KI-24:** read the 2026 rules (kiroween.devpost.com/rules). Check tracks, deadline, team size, video cap, "new projects" and "working app". Update D-23, the PRD timeline and this file.
-2. **F10 (in Kiro) → F03 → KI-01 spike** (F04 is done), each through the cycle, with its LESSONS section open.
+2. **F10 (in Kiro)**, then rerun F03's Done-when against it (KI-30), then the **KI-01 spike** (F04 is done), each through the cycle, with its LESSONS section open.
 3. **KI-06:** verify the Kiro hook, MCP and Power formats before F11, F13 or F18.
 4. **F26:** iterate on the sprites and wordmark with the user early (from week 2). The THEME drafts are only a start.
 
