@@ -86,6 +86,7 @@ The prototype (2026-10-30) installed and verified these versions. Reuse them unl
 | ws | 8.22.0 | core dev (guard test fixture) | yes |
 | @types/ws | 8.18.2 | core dev | yes |
 | fast-check | 4.10.2 | core | yes |
+| @anthropic-ai/sdk | 1.3.0 | core (F05 compiler) | yes |
 | Big List of Naughty Strings | commit `db33ec7` (vendored, MIT) | core `src/personas/generators/data/` | yes |
 
 ## Local setup (target)

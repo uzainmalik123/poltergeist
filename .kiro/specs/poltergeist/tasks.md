@@ -17,7 +17,7 @@ Work happens one PRD feature at a time, through the grill → plan → implement
   - _Requirements: 4.1, 4.2_
 - [ ] 6. KI-01 spike: compile and run 5 criteria × 3 personas against Candy Swap
   - _Requirements: 5.1–5.6 (spike only)_
-- [ ] 7. F05 Ghost Compiler
+- [x] 7. F05 Ghost Compiler (fixture; live Candy Swap check pending, KI-34; built before the spike, D-32)
   - _Requirements: 5.1–5.6_
 - [ ] 8. F06 Ghost Runner
   - _Requirements: 6.1–6.8, 2.5, 2.7_

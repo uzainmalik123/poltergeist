@@ -110,7 +110,7 @@ Every browser Poltergeist launches goes through one path:
   "criterion": "3.2",
   "persona": "doppelganger",
   "intent": "Two sessions claim the same candy at the same time; only one should succeed.",
-  "routes": ["/market"],
+  "routes": [{ "path": "/market", "identity": "default" }],
   "actors": {
     "a": [ { "goto": "/market" }, { "holdRequests": "POST /api/claims" },
            { "click": { "role": "button", "name": "Claim Sour Skulls" } }, { "barrier": "fire" },
@@ -124,10 +124,11 @@ Every browser Poltergeist launches goes through one path:
 }
 ```
 
-- **Steps:** `goto`, `click`, `dblclick`, `fill {target, input:{generator|literal}}`, `press`, `back`, `reload`, `wait (≤2000 ms)`, `throttle {profile}`, `barrier`, `holdRequests`, `releaseRequests`, `login {account}`, `logout`.
+- **Steps:** `goto` (a picked route only), `click`, `dblclick`, `fill {target, input:{generator}}` (no `literal`: the LLM never writes values, D-04, D-32), `press` (`Enter Tab Escape Space Backspace ArrowUp ArrowDown ArrowLeft ArrowRight`), `back`, `reload`, `wait (0…2000 ms)`, `throttle {profile: slow-3g|fast-3g}`, `barrier` (reached once by every actor), `holdRequests` / `releaseRequests` (`"METHOD /path"`, every hold released later in the same actor), `login {account}`, `logout`. Each persona allows a subset (D-31).
 - **Targets:** D-15 only, and only ones Scout emitted.
 - **Assertions:** `textVisible`, `textNotVisible`, `urlMatches`, `elementCount`, `api {method,path,jsonPath?,status?,equals?}`, `noConsoleErrors`, `noUncaughtExceptions`.
-- **Not applicable:** `{ "notApplicable": true, "reason": "…" }`.
+- **What the LLM returns:** `{ "result": { "kind": "plan", "intent", "actors", "assert" } }` or `{ "result": { "kind": "notApplicable", "reason": "…" } }` (the wrapper exists because a structured-output root must be an object). The compiler stamps `criterion`, `persona` and `routes` (`{path, identity}` of the ≤ 2 picked routes, so F06 knows each session) onto the plan above (D-32).
+- **Compiler:** `compile(criteria, scout, { client, model, cacheDir, outDir?, personas?, concurrency ≤ 4, onPlan? })` → `{ pairs, llmCalls, cacheHits }` (`packages/core/src/compiler/`). Routes are picked deterministically by token overlap (KI-03). Validation is zod, then semantic (persona steps and generators, actor count, Scout-emitted targets on the picked routes, barriers, holds, relative `api` paths). One retry with the errors, then `uncompilable`. The cache key covers the criterion hash, persona and persona-definition hash, the picked routes' `path@identity:routeHash`, model and `PROMPT_VERSION`.
 - The zod schema is the single definition. The structured-output JSON Schema and the TS types are generated from it.
 
 ## 7. Personas

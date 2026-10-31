@@ -3,3 +3,4 @@ export * from './safety/index.js';
 export * from './config/index.js';
 export * from './scout/index.js';
 export * from './personas/index.js';
+export * from './compiler/index.js';
