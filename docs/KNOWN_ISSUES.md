@@ -363,5 +363,6 @@
 ### KI-34: F05 Done-when not yet run live against Candy Swap · Major · Open
 - **Context:** F05 was built fixture-first (D-32): F10 isn't built, the KI-01 spike hasn't run, and no API key is available in dev sessions. Health tests use a fake `LlmClient`.
 - **Blocks:** F05 sign-off, the KI-01 spike.
-- **Next action:** once F10 exists and a key is available (`doppler run -- …`), compile Candy Swap with the real client: record % valid on first try and after retry, justified `notApplicable`, refusals and route-picker misses; rerun to confirm zero LLM calls. Feed the numbers into the re-scoped KI-01 spike.
+- **Done on the fixture (2026-10-31):** `packages/core/test/compiler/done-when.test.ts` compiles a 5-criterion fixture spec against the fixture's real Scout output with a scripted fake: 15/15 valid or justified `notApplicable`, and a rerun makes 0 calls.
+- **Next action:** once F10 exists and a key is available (`doppler run -- …`), compile Candy Swap with `createAnthropicClient()`: record % valid on first try and after retry, justified `notApplicable`, refusals and route-picker misses; rerun to confirm zero LLM calls. Feed the numbers into the re-scoped KI-01 spike.
 
