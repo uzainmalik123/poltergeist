@@ -35,6 +35,7 @@
 | D-26 | Costume Kit is its own package and a High feature (F26); possession/exorcism move there from F22 | Accepted |
 | D-28 | `main` is protected by a GitHub ruleset: changes land only through PRs with a green `health` check | Accepted |
 | D-27 | Spec Reader edge-case rulings and API (F01, extends D-16): `parseSpec`/`parseRequirements`, warning codes, KI-16 edge cases | Accepted |
+| D-29 | F02 rebuild rulings (extends D-17, D-18, D-22): KI-21 folded in, internal bypass list, decoded `forbidden` paths, userinfo targets rejected, unresolved unused accounts dropped, reset resolves on `exit` | Accepted |
 
 ---
 
@@ -303,3 +304,17 @@
   - Sessions never push to `main`. They push a feature branch and open a PR, and CI's `health` must be green before merging (this enforces D-19).
   - Raise the required approvals to 1 if teammates join.
   - If the CI job is renamed, update the required check in the ruleset in the same change.
+
+### D-29: F02 rebuild rulings (extends D-17, D-18, D-22)
+- **Context:** grilling F02 for the rebuild (2026-10-31). LESSONS § F02, KI-17, KI-19 to KI-22 listed items the prototype deferred. The user asked to accept the recommended answers.
+- **Decision:**
+  - **KI-21 in the first pass:** reset output is redacted *before* it is trimmed to 64 KB, `runReset` takes the loader's `env`, validation issue paths are redacted as well as messages, `forbidden` rules are precompiled once per rule list, and `BlockedRequest` carries the browser's `errorText` when there is one. All KI-21 test gaps are written in this cycle.
+  - **Bypass list is internal:** the proxy bypass builder is not exported. `newGuardedContext` re-validates every host it puts in the bypass list (no `,`, `;`, `<`, `*` other than a leading `*.`, whitespace) and throws on a bad entry. IPv6 entries are checked with `net.isIPv6`, not a regex.
+  - **`forbidden` paths (KI-17, half):** the pathname is percent-decoded once before matching. If decoding fails, the raw pathname is matched. Matching stays case-sensitive. `forbidden` on redirect hops to allowlisted hosts is still not enforced (the guard can't see those hops without CDP); that half of KI-17 stays open for F17.
+  - **Targets (KI-22):** a `target` with userinfo (`http://u:p@host`, `http://localhost@evil.com`) is rejected. Hostnames are not normalised, so a trailing-dot host such as `localhost.` is not on the allowlist: it is refused at load and blocked by the guard (fails closed).
+  - **Unused accounts (KI-20):** an account whose `env:NAME` password is unset or empty and that no route uses is dropped from the loaded accounts with an `unresolved-secret` warning. A literal `env:NAME` string never survives as a password. A route-used account with an unset variable is still a `ConfigError`.
+  - **Reset (KI-19):** `runReset` resolves on the child's `exit`, then stops reading the pipes. It kills the process group only on timeout. `resetCommand` must not start long-lived servers (documented).
+  - **Redaction:** the `Redactor` also scrubs each secret's `encodeURIComponent` form.
+  - **Layout:** `packages/core/src/config/` (schema, errors, load, redact, reset) and `packages/core/src/safety/` (allowlist, forbidden, guard, limiter). Browser tests use a local `node:http` fixture and never touch the internet. CI installs Chromium. `npm run test:guard:1cpu` runs the guard tests pinned to one CPU (Done-when), outside `health`.
+  - **Left to F06:** worker WebSockets and `about:blank` popups (KI-18).
+- **Consequences:** KI-19, KI-20 and KI-21 are resolved by F02; KI-17 stays open for redirect hops only. F06 can rely on `LoadedConfig.accounts` containing only usable accounts.
