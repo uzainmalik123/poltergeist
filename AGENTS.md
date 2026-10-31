@@ -14,7 +14,7 @@ It reads a Kiro spec (`.kiro/specs/<name>/requirements.md`, EARS-style criteria)
 
 ## Current state (2026-10-31)
 
-- **Scaffold and F01 Spec Reader are built** (`packages/core/src/spec/`, D-27). `npm run health` is green locally. CI runs on the first push to `main`. **Next: F02**, then F10 (in Kiro), then F03.
+- **Scaffold and F01 Spec Reader are built** (`packages/core/src/spec/`, D-27). `npm run health` is green locally and in CI (PR #1). **Next: F02**, then F10 (in Kiro), then F03.
 - **The prototype** lives at `../poltergeist-old` (private, built before the hacking window). It is **read-only and off-limits for code**: don't copy, port or open `../poltergeist-old/packages/` while implementing. Everything worth keeping is already in `docs/DECISIONS.md`, `docs/KNOWN_ISSUES.md` and `docs/LESSONS.md`. This keeps every line of code inside the hacking window (KI-24).
 - **`.kiro/` is real** in this repo. It holds the spec (`.kiro/specs/poltergeist/`) and steering. Commit it, and never gitignore it.
 
@@ -142,10 +142,9 @@ Each PRD feature (or KNOWN_ISSUES item) goes through this cycle. The skills are 
 ## Do first (as of 2026-10-31)
 
 1. **KI-05 / KI-24:** read the 2026 rules (kiroween.devpost.com/rules). Check tracks, deadline, team size, video cap, "new projects" and "working app". Update D-23, the PRD timeline and this file.
-2. **Build order 0:** push to GitHub and confirm the first CI run is green, then mark the scaffold Done.
-3. **F02 → F10 (in Kiro) → F03**, each through the cycle, with its LESSONS section open.
-4. **KI-06:** verify the Kiro hook, MCP and Power formats before F11, F13 or F18.
-5. **F26:** iterate on the sprites and wordmark with the user early (from week 2). The THEME drafts are only a start.
+2. **F02 → F10 (in Kiro) → F03**, each through the cycle, with its LESSONS section open.
+3. **KI-06:** verify the Kiro hook, MCP and Power formats before F11, F13 or F18.
+4. **F26:** iterate on the sprites and wordmark with the user early (from week 2). The THEME drafts are only a start.
 
 ## Tools available to sessions
 
