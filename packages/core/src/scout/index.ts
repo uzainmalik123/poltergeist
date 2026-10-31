@@ -1,4 +1,5 @@
 export { INTERACTIVE_ROLES, LABELABLE_ROLES, interactiveFromSnapshot, parseAriaLine } from './aria.js';
+export { scout } from './scout.js';
 export { isUnderLoginRoute, locateTarget, login } from './login.js';
 export type { LoginResult } from './login.js';
 export { captureRoute } from './capture.js';
