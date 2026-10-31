@@ -1,3 +1,4 @@
+export { INTERACTIVE_ROLES, LABELABLE_ROLES, interactiveFromSnapshot, parseAriaLine } from './aria.js';
 export { slugsFor } from './slug.js';
 export { routeHash, scoutHash } from './hash.js';
 export type {
