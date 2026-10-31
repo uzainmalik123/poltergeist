@@ -15,6 +15,7 @@ export const EXCLUDED_SECTIONS: readonly string[] = Object.freeze([
   'Known CVEs and Vulnerabilities',
   'Terminal escape codes',
   'iOS Vulnerabilities',
+  'jinja2 injection',
 ]);
 
 export type BlnsSection = { title: string; values: string[] };

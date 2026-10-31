@@ -20,6 +20,7 @@ describe('parseBlns', () => {
       'Known CVEs and Vulnerabilities',
       'Terminal escape codes',
       'iOS Vulnerabilities',
+      'jinja2 injection',
     ]);
   });
 
@@ -53,6 +54,9 @@ describe('naughtyValues', () => {
       expect(v).not.toContain('<script');
       expect(v).not.toContain('DROP TABLE');
       expect(v).not.toContain('%x(');
+      expect(v).not.toContain('{%');
+      expect(v).not.toContain('{{');
+      expect(v).not.toContain('__class__');
       expect(v).not.toContain(String.fromCharCode(27) + '[');
     }
   });

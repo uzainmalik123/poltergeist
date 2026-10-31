@@ -39,6 +39,7 @@
 | KI-28 | `npm audit` reports 11 moderate issues in dev-only lint tooling (minimatch, via eslint and typescript-eslint) | Minor | none (dev only) | Open |
 | KI-29 | F02 rebuild review minors: WebRTC iframe layer, dead-port reuse, provider keys in reset env, unbounded reset buffer, non-canonical IPv6 entries, terse missing-file message, guard tests that could reach the internet on regression | Minor | F06 | Open |
 | KI-30 | Valid form fills may need typed inputs (numbers, emails, dates); DSL `literal` input vs D-04 unresolved | Minor | F05, KI-01 spike | Open |
+| KI-31 | F04 review minors: BLNS header rule fragile on upstream bumps, no `.gitattributes` for vendored data, `blns.txt` read from source path (packaging), RangeError checked before unknown id, try/catch `.id` assertions | Minor | F09 (packaging) | Open |
 
 ---
 
@@ -316,3 +317,13 @@
 - **Context:** F04 (D-30) added a `plain` generator for ordinary valid values. Forms that need a number, email or date can't be filled validly by any generator yet. The DSL in design §6 also allows `input:{literal}`, which lets the LLM write a value and sits awkwardly with D-04.
 - **Blocks:** F05 (schema) and the KI-01 spike (it may show plans needing typed values).
 - **Next action:** in the spike, count how often a plan needed a typed value or used a literal. Then decide in F05 whether to add typed generators (`number`, `email`, `date`) or keep a restricted `literal`, and record a D-xx.
+
+### KI-31: F04 review minors · Minor · Open
+- **Context:** the final review of F04 (2026-10-31). Its one Important finding was fixed before merge (the jinja2 SSTI section is now excluded, D-30). These minors remain.
+- **Naughty strings:**
+  - The header rule ("a `#` line after an empty line") also turns BLNS comment paragraphs into pseudo-sections. That's harmless today. But if a future BLNS bump puts a comment paragraph inside an excluded section, the rest of that section would leak in under a title we don't exclude. Fix: pin the count (241) or a hash of `naughtyValues()` in a test before any bump.
+  - There's no `.gitattributes`, so `core.autocrlf` or a whitespace-trimming editor could alter the vendored `blns.txt`. Fix: mark it `-text`.
+- **Packaging:** `naughty.ts` reads `data/blns.txt` via `import.meta.url`. That works from source (tsx, vitest), but breaks if F09's `npx poltergeist` is bundled or built to `dist/` without copying `data/`. Fix in F09: copy the asset, or generate a JSON module at build time.
+- **API:** `generate('bogus', -1, 0)` throws `RangeError` before `UnknownGeneratorError`. Swap the order if F05's error mapping cares.
+- **Tests:** the try/catch `.id` assertions in `generators.test.ts` and `registry.test.ts` would pass silently if nothing threw (the `toThrow` line above them covers it). Use `toThrow(expect.objectContaining({ id }))`.
+- **Next action:** fix the `.gitattributes` and count pin with the next naughty-strings change. Fix the packaging item in F09.
