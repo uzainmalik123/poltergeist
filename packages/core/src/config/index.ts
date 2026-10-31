@@ -3,3 +3,5 @@ export type { AccountConfig, Config, ForbiddenRule, RouteConfig, Target } from '
 export { ConfigError, ResetError } from './errors.js';
 export type { ConfigIssue, ResetErrorKind } from './errors.js';
 export { REDACTED, Redactor } from './redact.js';
+export { loadConfig, parseConfig } from './load.js';
+export type { ConfigWarning, LoadedConfig } from './load.js';
