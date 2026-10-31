@@ -5,7 +5,7 @@ Work happens one PRD feature at a time, through the grill → plan → implement
 - [ ] 0. Scaffold the monorepo, the health gate and CI (D-19)
   - npm workspaces, TypeScript, ESLint, Vitest, `npm run health`, `.github/workflows/ci.yml`
   - _Requirements: none (infrastructure)_
-- [ ] 1. F01 Spec Reader
+- [x] 1. F01 Spec Reader
   - _Requirements: 1.1–1.8_
 - [ ] 2. F02 Target Config & Safety
   - _Requirements: 2.1–2.8_

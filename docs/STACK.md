@@ -71,16 +71,16 @@ The prototype (2026-10-30) installed and verified these versions. Reuse them unl
 
 | Package | Version | Where | Installed here? |
 |---|---|---|---|
-| typescript | 5.9.3 | root dev | no |
-| vitest | 4.1.12 | root dev | no |
-| eslint / @eslint/js | 9.39.1 | root dev | no |
-| typescript-eslint | 8.72.1 | root dev | no |
-| tsx | 4.23.15 | root dev | no |
-| @types/node | 22.20.5 | root dev | no |
-| unified | 11.0.5 | core | no |
-| remark-parse | 11.0.0 | core | no |
-| mdast-util-to-string | 4.0.0 | core | no |
-| @types/mdast | 4.0.4 | core dev | no |
+| typescript | 5.9.3 | root dev | yes |
+| vitest | 4.1.12 | root dev | yes |
+| eslint / @eslint/js | 9.39.1 | root dev | yes |
+| typescript-eslint | 8.72.1 | root dev | yes |
+| tsx | 4.23.15 | root dev | yes |
+| @types/node | 22.20.5 | root dev | yes |
+| unified | 11.0.5 | core | yes |
+| remark-parse | 11.0.0 | core | yes |
+| mdast-util-to-string | 4.0.0 | core | yes |
+| @types/mdast | 4.0.4 | core dev | yes |
 | zod | 4.6.7 | core | no |
 | playwright-core | 1.64.1 | core | no |
 
