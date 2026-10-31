@@ -38,6 +38,7 @@
 | KI-27 | Poltergeist could look too similar to Reanimator (same team circle, same dither technique) | Minor | F26, D-24 | Open |
 | KI-28 | `npm audit` reports 11 moderate issues in dev-only lint tooling (minimatch, via eslint and typescript-eslint) | Minor | none (dev only) | Open |
 | KI-29 | F02 rebuild review minors: WebRTC iframe layer, dead-port reuse, provider keys in reset env, unbounded reset buffer, non-canonical IPv6 entries, terse missing-file message, guard tests that could reach the internet on regression | Minor | F06 | Open |
+| KI-30 | F03 Done-when has not yet been run against the real Candy Swap (built against a fixture, D-30) | Major | F03 sign-off, KI-01 spike | Open |
 
 ---
 
@@ -310,3 +311,8 @@
 - **Loader:** the missing-file message (`cannot read <path>: ENOENT`) could suggest `--config` or creating `poltergeist.config.json`.
 - **Tests:** the guard tests use `example.com`, which `--host-resolver-rules=MAP *.test` doesn't cover. If the guard regressed, they would reach the real internet. Use `evil.test` instead.
 - **Next action:** pick these up when F06 starts consuming the guard and `runReset`.
+
+### KI-30: F03 Done-when not yet run against the real Candy Swap · Major · Open
+- **Context:** F03 was built before F10 (D-30), so its Done-when ran against a tests-only fixture shaped like Candy Swap.
+- **Risk:** the real Kiro-built app may use markup the login heuristic or the capture rules don't expect (unlabelled inputs, icon buttons, client-side login).
+- **Next action:** when F10 lands, run `scout()` against `http://localhost:4000` with Candy Swap's config. Check that the "Claim" buttons and the trade-form fields are listed by role and name, and that every emitted label and testId resolves. Add an integration test if it can run in CI.
