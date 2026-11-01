@@ -119,11 +119,9 @@ export async function startClaimsFixture(): Promise<ClaimsFixture> {
       if (path === '/api/claims' && req.method === 'POST') {
         arrivals.push(performance.now());
         const { candy } = JSON.parse(await readBody(req)) as { candy: string };
-        const list = claims.get(candy) ?? [];
-        if (list.length > 0) return json(res, 409, { error: 'already claimed' });
+        if ((claims.get(candy) ?? []).length > 0) return json(res, 409, { error: 'already claimed' });
         await new Promise((r) => setTimeout(r, 30)); // a slow write between the check and the insert
-        list.push(cookies(req).sid ?? 'anonymous');
-        claims.set(candy, list);
+        claims.set(candy, [...(claims.get(candy) ?? []), cookies(req).sid ?? 'anonymous']); // INSERT appends a row
         return json(res, 201, { ok: true });
       }
       if (path.startsWith('/api/candies/')) return json(res, 200, { claims: claims.get(path.slice('/api/candies/'.length)) ?? [] });

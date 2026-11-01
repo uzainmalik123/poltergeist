@@ -46,6 +46,15 @@ describe('runReset', () => {
     expect((await runReset(l))?.outputTail).toBe('pw=[REDACTED]');
   });
 
+  it('strips provider keys from the reset env (KI-29)', async () => {
+    const l = await loaded(js("process.stdout.write([process.env.ANTHROPIC_API_KEY, process.env.DOPPLER_TOKEN, process.env.AWS_SECRET_ACCESS_KEY, process.env.KEEP].join(','))"), {
+      env: { ...process.env, ANTHROPIC_API_KEY: 'sk-test-xyz', DOPPLER_TOKEN: 'dp.st.xyz', AWS_SECRET_ACCESS_KEY: 'aws-xyz', KEEP: 'kept' },
+    });
+    const out = (await runReset(l))?.outputTail ?? '';
+    expect(out).not.toMatch(/sk-test-xyz|dp\.st\.xyz|aws-xyz/);
+    expect(out).toContain('kept');
+  });
+
   it('redacts a secret split across stdout and stderr', async () => {
     const l = await loaded(js("process.stdout.write('hun');setTimeout(()=>process.stderr.write('ter22'),20)"), { secrets: ['hunter22'] });
     const out = (await runReset(l))?.outputTail ?? '';

@@ -8,6 +8,21 @@ const MAX_OUTPUT_CHARS = 64 * 1024;
 const TAIL_LINES = 20;
 /** How long to wait for the pipes to close after `exit` before giving up on them (KI-19). */
 const CLOSE_GRACE_MS = 100;
+/** Provider credentials a reset never needs; stripped so `set -x` or an env dump can't print them (KI-29). */
+export const PROVIDER_ENV_KEYS = Object.freeze([
+  'ANTHROPIC_API_KEY',
+  'ANTHROPIC_AUTH_TOKEN',
+  'DOPPLER_TOKEN',
+  'AWS_ACCESS_KEY_ID',
+  'AWS_SECRET_ACCESS_KEY',
+  'AWS_SESSION_TOKEN',
+]);
+
+function resetEnv(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  const out = { ...env };
+  for (const k of PROVIDER_ENV_KEYS) delete out[k];
+  return out;
+}
 
 /**
  * Redact first, then trim (D-29), so no part of a secret survives at the cut. Each stream is redacted whole
@@ -20,7 +35,7 @@ function tail(out: { stdout: string; stderr: string }, redact: (s: string) => st
 }
 
 /**
- * Runs `resetCommand` through the shell in the config file's directory with the loader's env (Req 2.7, D-17).
+ * Runs `resetCommand` through the shell in the config file's directory with the loader's env, minus provider keys (Req 2.7, D-17, KI-29).
  * Resolves on the child's `exit`, not when every pipe closes, so a command that leaves a background child
  * holding stdout doesn't time out (KI-19). On timeout the whole process group is killed. Failures are
  * `ResetError`s: system errors, never app bugs. `resetCommand` must not start long-lived servers.
@@ -40,7 +55,7 @@ export function runReset(
     const child = spawn(command, {
       shell: true,
       cwd: loaded.configDir,
-      env: loaded.env,
+      env: resetEnv(loaded.env),
       detached: true,
       stdio: ['ignore', 'pipe', 'pipe'],
     });
