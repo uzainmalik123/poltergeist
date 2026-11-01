@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
@@ -7,6 +7,8 @@ import { parseRequirements, parseSpec, type ParsedSpec } from '../../src/spec/in
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(here, '../../../..');
 const OWN = join(repoRoot, '.kiro/specs/poltergeist');
+/** Kiro-generated in F10 (D-37); the test below is skipped until it exists. */
+const CANDY_REAL = join(repoRoot, 'fixtures/candy-swap/.kiro/specs/candy-swap');
 const fixture = (name: string): string => join(here, '../fixtures/spec', name);
 const FIXTURES = { own: OWN, reanimator: fixture('reanimator'), candy: fixture('candy-swap-draft'), messy: fixture('messy') };
 
@@ -38,6 +40,17 @@ describe('Done-when fixtures', () => {
     );
     expect(spec.criteria).toHaveLength(31);
   });
+
+  it.skipIf(!existsSync(join(CANDY_REAL, 'requirements.md')))(
+    'parses the real Kiro-generated Candy Swap spec with no warnings (F10)',
+    async () => {
+      const spec = await parseSpec(CANDY_REAL);
+      expect(spec.warnings).toEqual([]);
+      const requirements = new Set(spec.criteria.map((c) => c.requirementId)).size;
+      expect(requirements).toBeGreaterThanOrEqual(6);
+      expect(requirements).toBeLessThanOrEqual(8);
+    },
+  );
 
   it('parses the Candy Swap draft', async () => {
     const spec = await parseSpec(FIXTURES.candy);
