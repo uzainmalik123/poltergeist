@@ -146,9 +146,9 @@ Sprites are defined in `@poltergeist/costume` (`docs/THEME.md` §4).
 
 ## 8. Run events (WebSocket `ws://localhost:6660/runs/<id>`)
 
-`run.started` · `scout.route` · `plan.compiled` · `ghost.spawned` · `ghost.step {ghostId, step, x?, y?}` · `ghost.frame {ghostId, jpegBase64}` (≤ 4 fps per ghost) · `guard.blocked {ghostId, reason, url}` · `assert.result` · `verdict.pair` · `verdict.criterion` · `run.finished`.
+`run.started` · `scout.route` · `plan.compiled` · `rep.started {rep}` · `reset.finished {rep, ok, durationMs, error?}` · `ghost.spawned` · `ghost.step {ghostId, step, x?, y?}` · `ghost.frame {ghostId, jpegBase64}` (≤ 4 fps per ghost) · `guard.blocked {ghostId, reason, url}` · `assert.result` · `rep.finished {rep, outcomes}` · `verdict.pair` · `verdict.criterion` · `run.finished`. Every event carries `t` (epoch ms).
 
-Every event except frames is appended to `events.ndjson`. Frames are sampled to disk for replay. The Séance turns frames into glyphs client-side (F26); the run folder keeps real JPEGs.
+The runner (F06) emits the `rep.*`, `reset.*`, `ghost.*`, `guard.*` and `assert.*` events through `runPlans(browser, loaded, plans, { sessions, outDir?, reps?, seed?, frameFps?, concurrency?, signal?, onEvent? })` (`packages/core/src/runner/`, D-33); the orchestrator (F09) owns `run.*`, `scout.*` and `plan.*` and the WebSocket. `ghostId` is `<criterion>__<persona>__r<rep>__<actor>`. Every event except frames is appended to `events.ndjson`. Frames are sampled to disk for replay. The Séance turns frames into glyphs client-side (F26); the run folder keeps real JPEGs.
 
 ## 9. Run folder
 
@@ -161,7 +161,7 @@ Every event except frames is appended to `events.ndjson`. Frames are sampled to 
     plans/<criterion>__<persona>.json
     events.ndjson
     frames/<ghostId>/<seq>.jpg
-    artifacts/<criterion>__<persona>__rep<k>/{screenshot.png,trace.zip}
+    artifacts/<criterion>__<persona>__rep<k>/{screenshot-<actor>.png,trace-<actor>.zip}   failed reps only; no trace for an actor that started from a session or ran a login step (secrets)
     verdicts.json
 ```
 

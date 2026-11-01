@@ -61,14 +61,14 @@ const redirect = (to: string) => `${fixture.origin}/redirect?to=${encodeURICompo
 describe('network guard (real Chromium)', { timeout: 15_000 }, () => {
   it('blocks and reports a third-party fetch (Done-when)', async () => {
     const { page, blocked } = await open();
-    expect(await tryFetch(page, 'http://example.com/x')).toBe('err');
+    expect(await tryFetch(page, 'http://evil.test/x')).toBe('err');
     await expect.poll(() => blocked).toEqual([
-      expect.objectContaining({ host: 'example.com', reason: 'host', method: 'GET', url: 'http://example.com/x' }),
+      expect.objectContaining({ host: 'evil.test', reason: 'host', method: 'GET', url: 'http://evil.test/x' }),
     ]);
   });
 
   it.each([
-    ['example.com', 'http://example.com/'],
+    ['evil.test', 'http://evil.test/'],
     ['169.254.169.254', 'http://169.254.169.254/latest/meta-data/'],
     ['127.0.0.2', 'http://127.0.0.2/'],
   ])('stops and reports a redirect hop to %s (Done-when)', async (host, to) => {
@@ -79,8 +79,8 @@ describe('network guard (real Chromium)', { timeout: 15_000 }, () => {
 
   it('stops a two-hop redirect chain', async () => {
     const { page, blocked } = await open();
-    expect(await tryFetch(page, redirect(redirect('http://example.com/')))).toBe('err');
-    await expectOneRedirectReport(blocked, 'example.com');
+    expect(await tryFetch(page, redirect(redirect('http://evil.test/')))).toBe('err');
+    await expectOneRedirectReport(blocked, 'evil.test');
   });
 
   it('stops an EventSource redirect', async () => {
@@ -95,10 +95,10 @@ describe('network guard (real Chromium)', { timeout: 15_000 }, () => {
           };
           es.onopen = () => resolve('open');
         }),
-      redirect('http://example.com/'),
+      redirect('http://evil.test/'),
     );
     expect(outcome).toBe('error');
-    await expectOneRedirectReport(blocked, 'example.com');
+    await expectOneRedirectReport(blocked, 'evil.test');
   });
 
   it('blocks and reports a WebSocket to a third party (Done-when)', async () => {
@@ -106,14 +106,14 @@ describe('network guard (real Chromium)', { timeout: 15_000 }, () => {
     const outcome = await page.evaluate(
       () =>
         new Promise<string>((resolve) => {
-          const ws = new WebSocket('ws://example.com/ws');
+          const ws = new WebSocket('ws://evil.test/ws');
           ws.onopen = () => resolve('open');
           ws.onclose = () => resolve('closed');
         }),
     );
     expect(outcome).toBe('closed');
     await expect.poll(() => blocked).toEqual([
-      expect.objectContaining({ host: 'example.com', reason: 'host', resourceType: 'websocket' }),
+      expect.objectContaining({ host: 'evil.test', reason: 'host', resourceType: 'websocket' }),
     ]);
   });
 
@@ -197,7 +197,7 @@ describe('network guard (real Chromium)', { timeout: 15_000 }, () => {
         throw new Error('listener bug');
       },
     });
-    expect(await tryFetch(page, 'http://example.com/x')).toBe('err');
+    expect(await tryFetch(page, 'http://evil.test/x')).toBe('err');
     expect(await tryFetch(page, `${fixture.origin}/ok`)).toBe('ok');
   });
 

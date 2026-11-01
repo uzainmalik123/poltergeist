@@ -24,7 +24,7 @@
 | 5 | F04 | Core Personas & Input Generators | High | Done | n/a |
 | 6 | n/a | **KI-01 spike** (compile + run 5 criteria × 3 personas) | High | TBD | F01, F03, F04 |
 | 7 | F05 | Ghost Compiler (LLM → Plan DSL) | High | Done (fixture; live check pending, KI-34) | F01, F03, F04 (built before the spike, D-32) |
-| 8 | F06 | Ghost Runner | High | TBD | F02, F05 |
+| 8 | F06 | Ghost Runner | High | Done (fixture; real Candy Swap check pending, KI-36) | F02, F05 (built before F10, D-33) |
 | 9 | F07 | Verdicts & Flake Filter | High | TBD | F06 |
 | 10 | F08 | Haunting Report | High | TBD | F07 |
 | 11 | F26 | Costume Kit (glyph renderer, sprites, wordmark, palette, possession) | High | TBD | n/a (can run in parallel from week 2) |
@@ -204,7 +204,9 @@
   - Cache hits make no call.
 - **Done when:** compiling Candy Swap gives ≥ 80% valid or justified `notApplicable`, and a second run makes zero LLM calls.
 
-### F06: Ghost Runner · High · TBD
+### F06: Ghost Runner · High · Done (fixture)
+
+> 2026-11-01: built before F10, against a claims fixture with a naive check-then-insert endpoint (D-33). Plan `docs/plans/2026-11-01-F06-ghost-runner.md`. `runPlans(browser, loaded, plans, opts)` in `packages/core/src/runner/`. On the fixture, a Doppelgänger plan's two requests reach the server < 50 ms apart in every rep (also on one CPU), the race is found in ≥ 2 of 3 reps (KI-07), and 12 ghosts run at once (`test/runner/done-when.test.ts`). **Still to do:** the full Candy Swap haunting at 12 ghosts in < 5 min (KI-36).
 
 **Owns:** Playwright execution of plans (contexts per actor via `newGuardedContext`, steps, barriers, held requests, throttling, timeouts), reset scheduling and seed partitioning (KI-13), the Doppelgänger's shared session (KI-10), the ghost-cursor overlay injection, artifacts (screenshots, traces, sampled frames), turning guard reports into step outcomes, and run events. Implements Requirement 6 and the runtime parts of 2.5 and 2.7.
 **Not this feature:** pass/fail across reps (F07) · rendering anything (F12, F26).
@@ -456,4 +458,5 @@ Implements Requirement 12.
 - 2026-10-31: **F02 Done** (D-29). CI now installs Chromium for the guard tests.
 - 2026-10-31: **F03 Done against a fixture** (D-30). F03 was built before F10; the real Candy Swap check is tracked in KI-30.
 - 2026-10-31: **F05 Done against a fixture** (D-32). Built before the KI-01 spike: deterministic route picker, no DSL `literal`, two-pass validation, one retry, plan cache. The live Candy Swap check is KI-34, and the spike is re-scoped to use F05's compiler.
+- 2026-11-01: **F06 Done against a fixture** (D-33). Raw per-rep results for F07, conflict-key scheduling (KI-13), shared-session Doppelgänger, rendezvous barrier, request holds, ghost-cursor overlay, frames, artifacts, leak abort. The real Candy Swap check is KI-36.
 - 2026-10-31: **F04 Done** (D-31). Three core personas, eight deterministic generators (adds `plain`), vendored BLNS without injection sections. KI-32 opened (typed inputs).
