@@ -19,7 +19,7 @@ Work happens one PRD feature at a time, through the grill → plan → implement
   - _Requirements: 5.1–5.6 (spike only)_
 - [x] 7. F05 Ghost Compiler (fixture; live Candy Swap check pending, KI-34; built before the spike, D-32)
   - _Requirements: 5.1–5.6_
-- [ ] 8. F06 Ghost Runner
+- [x] 8. F06 Ghost Runner (fixture; real Candy Swap check pending, KI-36; built before F10, D-33)
   - _Requirements: 6.1–6.8, 2.5, 2.7_
 - [ ] 9. F07 Verdicts & Flake Filter
   - _Requirements: 7.1–7.4_
