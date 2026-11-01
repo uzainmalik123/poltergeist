@@ -43,6 +43,7 @@
 | D-34 | F07 verdict rulings (extends D-06): pure `computeVerdicts`, N = requested reps, same assertion = plan index, only `failure: 'app'` counts, forbidden blocks void a rep, `clean` needs ⌈2N/3⌉ clean reps, `uncompilable` rolls up as `inconclusive`, KI-37 timeout/attribution fixes folded in | Accepted |
 | D-35 | F08 report rulings (extends D-14): pure render + atomic two-file write, fix-ready haunted tasks, 300-line hard cap with JSON overflow, versioned JSON schema, draft wordmark and glyphs in core until F26, fixture-first Done-when | Accepted |
 | D-36 | F09 CLI rulings (extends D-17, D-35): fixture-first until F10/F26, `summon()` in core with a thin `@poltergeist/cli`, `parseArgs` flags, exit 0/1/2/130, run folder next to the config, live ghost block only on a colour TTY, loopback `--seance` event server with replay, KI-35/KI-41 fold-ins | Accepted |
+| D-37 | F10 prep rulings (extends D-10, D-01): Kiro builds Candy Swap, we ship only a brief, its Poltergeist config and `npm run candy:check`; URL/script/seed contract; standalone package; bug-neutral prompt | Accepted |
 
 ---
 
@@ -462,4 +463,31 @@
   - `mdText` also escapes `&`, so HTML entities stay literal.
   - Deferred minors are in KI-43.
 - **Consequences:** F11 and F12 call core's `summon()`. F14 adds the `--only` diff on top of `verdicts.json`. F26 replaces the CLI's draft wordmark and initials.
+
+### D-37: F10 prep rulings (extends D-10, D-01)
+- **Context:** grilling F10 (2026-11-01) in Claude Code. F10 must be generated and built **in Kiro** (PRD F10, D-10), and Kiro isn't available in that session. The user asked to accept the recommended answers.
+- **Decision:**
+  - **Kiro builds Candy Swap.** Claude Code writes no app code, seed or spec. Everything under `fixtures/candy-swap/` except `poltergeist.config.json` is Kiro's output, committed as is.
+  - **This cycle ships a prep kit:**
+    - the Kiro brief `docs/plans/2026-11-01-F10-kiro-brief.md` (a paste-ready prompt and a human checklist);
+    - `fixtures/candy-swap/poltergeist.config.json`;
+    - `npm run candy:check` (`scripts/candy-check/`), which runs F10's Done-when;
+    - a core spec test that's skipped until Kiro's spec exists, then asserts zero F01 warnings and 6–8 requirements.
+  - **Contract the brief fixes:**
+    - URLs `/`, `/login`, `/market`, `/inventory`, `/trades`, `/trades/new` on port 4000;
+    - scripts `dev`, `db:reset` (fixed seed, < 1 s) and `db:dump` (stable JSON, so determinism is checked by comparing dumps, not DB bytes);
+    - users `ghost1`…`ghost6` with one demo password, read as `env:CANDY_SWAP_PASSWORD` (root `.env.example`);
+    - the Kiro workspace is `fixtures/candy-swap/`, so the spec lands in `fixtures/candy-swap/.kiro/specs/candy-swap/`.
+  - **Bug-neutral prompt (KI-04):** the prompt never mentions concurrency, double-submits, validation, accessibility or testing, either way.
+  - **Standalone package:** Candy Swap is installed with `npm --prefix fixtures/candy-swap install` and is **not** in the root `workspaces`. That keeps native better-sqlite3 out of root `npm ci` and CI. STACK.md is updated to match.
+  - **`candy:check`:** spec shape (6–8 requirements and 20–30 criteria are warnings; any F01 warning is a failure that names its code for KI-16). The config loads (with a placeholder and a warning when `CANDY_SWAP_PASSWORD` is unset). Two resets, each followed by `db:dump`, with every reset ≤ 1000 ms and canonical-JSON dumps equal. Exit 1 on any failure. Failures are findings, never stack traces. Until Kiro builds the app, it exits 1 with "not built yet (KI-44)".
+  - `forbidden` stays empty until the first haunting shows what needs it. A second account gets added only when a plan needs one.
+- **Review fixes (2026-11-01):**
+  - **Reset while the server runs:** the brief now asks for a `db:reset` that restores the seed while `dev` is running, with no restart and the server seeing it at once (Poltergeist resets before every rep, D-33). It no longer says "deletes and recreates", which leaves a running better-sqlite3 server on the old file. The human checklist adds a manual "claim, reset, reload" check, because `candy:check` never starts the server.
+  - **Determinism scope:** only the candy, inventory and trade rows must be identical, and `db:dump` leaves out password data. Normal random-salt password hashing therefore passes, and the prompt doesn't push Kiro towards fixed salts.
+  - **Lint:** root eslint ignores `fixtures/candy-swap/**` (Kiro's output is never hand-edited, so its lint findings could never be fixed).
+  - **Gated spec test:** it now compares Kiro's F01 warning codes with a recorded list (`CANDY_KNOWN_WARNINGS`, empty until KI-16 notes are added), instead of requiring zero warnings and 6–8 requirements. The PRD allows warnings that become KI-16 notes, and the spec shape is `candy:check`'s warning.
+  - **`candy:check`:** reset and dump failures include the script's output tail, `runCandyCheck` takes `resetBudgetMs` so tests can't flake on a slow runner, and the timing message says it includes npm startup.
+  - Deferred minors are in KI-45.
+- **Consequences:** F10 stays open until the Kiro build lands (KI-44). Then `candy:check` is its Done-when, and KI-30/34/36/38/42 follow. If Kiro picks other URLs, the config changes, not the app.
 

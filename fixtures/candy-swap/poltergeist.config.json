@@ -1,0 +1,18 @@
+{
+  "target": "http://localhost:4000",
+  "routes": [
+    { "path": "/", "auth": false },
+    { "path": "/login", "auth": false },
+    { "path": "/market", "auth": true },
+    { "path": "/inventory", "auth": true },
+    { "path": "/trades", "auth": true },
+    { "path": "/trades/new", "auth": true }
+  ],
+  "accounts": {
+    "default": { "loginRoute": "/login", "username": "ghost1", "password": "env:CANDY_SWAP_PASSWORD" }
+  },
+  "resetCommand": "npm run --silent db:reset",
+  "concurrency": 12,
+  "reps": 3,
+  "forbidden": []
+}
