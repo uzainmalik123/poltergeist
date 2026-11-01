@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
@@ -11,6 +11,7 @@ import { createServer } from '../src/server.js';
 const TOOLS = ['get_haunting_report', 'get_run_status', 'list_criteria', 'rehaunt', 'summon_ghosts'];
 
 let root: string;
+let outside: string;
 const spec = (n: number) =>
   `# Requirements Document\n\n## Requirements\n\n### Requirement 1: Big\n\n#### Acceptance Criteria\n\n${Array.from(
     { length: n },
@@ -24,8 +25,16 @@ beforeAll(async () => {
     await writeFile(join(root, 'app', '.kiro', 'specs', name, 'requirements.md'), spec(n));
   }
   await writeFile(join(root, 'app', 'poltergeist.config.json'), '{}');
+  outside = await mkdtemp(join(tmpdir(), 'mcp-server-out-'));
+  await writeFile(join(outside, 'poltergeist.config.json'), '{}');
+  await mkdir(join(root, 'linked', 'specs', 's'), { recursive: true });
+  await writeFile(join(root, 'linked', 'specs', 's', 'requirements.md'), spec(1));
+  await symlink(join(outside, 'poltergeist.config.json'), join(root, 'linked', 'poltergeist.config.json'));
 });
-afterAll(() => rm(root, { recursive: true, force: true }));
+afterAll(async () => {
+  await rm(root, { recursive: true, force: true });
+  await rm(outside, { recursive: true, force: true });
+});
 
 function fakeSummon() {
   const calls: SummonOptions[] = [];
@@ -97,6 +106,15 @@ describe('MCP server', () => {
     const r = await call('list_criteria', { specDir: '../outside' });
     expect(r.isError).toBe(true);
     expect(r.text).toMatch(/^PathError/);
+  });
+
+  it('rejects a found config that links outside root (the run folder would follow it)', async () => {
+    const f = fakeSummon();
+    const { call } = await connect(f.summon);
+    const r = await call('summon_ghosts', { specDir: 'linked/specs/s', waitMs: 0 });
+    expect(r.isError).toBe(true);
+    expect(r.text).toMatch(/^PathError/);
+    expect(f.calls).toHaveLength(0);
   });
 
   it('rejects unknown personas before starting anything', async () => {

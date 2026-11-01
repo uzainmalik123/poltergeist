@@ -1,5 +1,5 @@
-import { existsSync } from 'node:fs';
-import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
+import { existsSync, realpathSync } from 'node:fs';
+import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 
 /** A path the agent passed resolves outside the server's root (D-38). */
 export class PathError extends Error {
@@ -11,10 +11,27 @@ const inside = (root: string, p: string) => {
   return rel === '' || (!rel.startsWith('..') && !isAbsolute(rel));
 };
 
-/** `p` resolved against `root`; throws `PathError` unless it is `root` or inside it. */
+/** `p` with symlinks resolved in its longest existing prefix; the rest (not created yet) is kept as is. */
+function realish(p: string): string {
+  const rest: string[] = [];
+  let dir = p;
+  while (!existsSync(dir)) {
+    const parent = dirname(dir);
+    if (parent === dir) return p;
+    rest.unshift(basename(dir));
+    dir = parent;
+  }
+  return join(realpathSync(dir), ...rest);
+}
+
+/**
+ * `p` resolved against `root`; throws `PathError` unless it is `root` or inside it, both as
+ * written and after following symlinks, so a link can't carry reads or report writes outside.
+ */
 export function resolveInside(root: string, p: string): string {
   const abs = resolve(root, p);
-  if (!inside(resolve(root), abs)) throw new PathError(`${p} is outside the workspace root ${root}`);
+  const ok = inside(resolve(root), abs) && inside(realish(resolve(root)), realish(abs));
+  if (!ok) throw new PathError(`${p} is outside the workspace root ${root}`);
   return abs;
 }
 

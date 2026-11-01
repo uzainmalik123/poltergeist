@@ -531,8 +531,12 @@
     - an in-process SDK client runs list → summon → report → rehaunt on the claims fixture with a fake LLM;
     - a spawned-stdio test checks `tools/list` through the real bin;
     - the real Kiro loop on Candy Swap is KI-46.
+- **Review fixes (2026-11-01):**
+  - **Symlinks can't escape root.** `resolveInside` checks the path as written and after following symlinks (the realpath of its longest existing prefix). A config found by the upward search goes through the same check, because the run folder lives next to it.
+  - **The template runs `node <absolute bin>` with an absolute `--root`.** `npx poltergeist-mcp` would resolve from public npm outside this repo, and Kiro's non-TTY spawn would auto-install whatever holds that name, with the API key in its env. `--root .` would depend on the undocumented spawn cwd. A test pins both.
+  - Deferred minors are in KI-48.
 - **Consequences:**
-  - F13 installs `integrations/kiro/mcp.json`.
+  - F13 installs `integrations/kiro/mcp.json`, filling both absolute paths.
   - F14 adds the verdict diff to `rehaunt`, and should merge subset results into the full report (KI-47).
   - F18 bundles the same server.
   - If Kiro proves to honour long `requestTimeout`s, the default `waitMs` can go up.

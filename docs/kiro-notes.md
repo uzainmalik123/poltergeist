@@ -24,7 +24,7 @@ Source: <https://kiro.dev/docs/mcp/configuration/> and <https://kiro.dev/docs/mc
 
 ## MCP: unverified
 
-- **`cwd`** for a local server isn't documented. That's why `poltergeist-mcp` takes `--root` (D-38).
+- **`cwd`** for a local server isn't documented, and neither is a `${workspaceFolder}`-style variable. That's why `poltergeist-mcp` takes `--root`, always as an absolute path (D-38).
 - **Timeouts:**
   - the custom-agent reference (<https://kiro.dev/docs/custom-agents/configuration-reference/>) lists a per-server `timeout` (handshake, default 60 000 ms) and `requestTimeout` (per call, default 120 000 ms);
   - it's unknown whether the IDE honours them in `mcp.json`;
@@ -53,7 +53,7 @@ Source: <https://kiro.dev/docs/powers/> and <https://kiro.dev/docs/powers/create
 ## Manual F11 check in Kiro (KI-46)
 
 1. Start Candy Swap (`npm --prefix fixtures/candy-swap run dev`) once F10 exists (KI-44).
-2. Open `fixtures/candy-swap/` as the Kiro workspace. Add `integrations/kiro/mcp.json`'s entry to `.kiro/settings/mcp.json` with `"command": "node"` and the absolute path to `packages/mcp/bin/poltergeist-mcp.js`. Approve `ANTHROPIC_API_KEY`.
+2. Open `fixtures/candy-swap/` as the Kiro workspace. Add `integrations/kiro/mcp.json`'s entry to `.kiro/settings/mcp.json`, replacing both placeholders with **absolute** paths: the bin, and `--root` set to the workspace (`…/fixtures/candy-swap`). Never use `--root .` (spawn cwd unknown) or `npx poltergeist-mcp` (it would resolve from public npm). Approve `ANTHROPIC_API_KEY`.
 3. In the MCP panel, check that the five tools are listed and none is excluded.
 4. Ask the agent: "summon the ghosts on the candy-swap spec". It should call `summon_ghosts`, poll `get_run_status` if needed, read `get_haunting_report` for a haunted id, fix the code, then call `rehaunt` with that id until it's clean.
 5. Note in KI-06 and KI-12 whether any call timed out, and what Kiro's MCP log says about `requestTimeout`.

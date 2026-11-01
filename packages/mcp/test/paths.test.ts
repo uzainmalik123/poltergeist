@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, realpath, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -34,5 +34,33 @@ describe('findConfig', () => {
 
   it('returns undefined when there is none up to root', () => {
     expect(findConfig(join(root, 'bare', 'specs', 's'), join(root, 'bare'))).toBeUndefined();
+  });
+});
+
+describe('resolveInside with symlinks', () => {
+  let root: string;
+  let outside: string;
+  beforeAll(async () => {
+    root = await realpath(await mkdtemp(join(tmpdir(), 'mcp-link-root-')));
+    outside = await realpath(await mkdtemp(join(tmpdir(), 'mcp-link-out-')));
+    await mkdir(join(root, 'real'));
+    await symlink(outside, join(root, 'escape'));
+    await symlink(join(root, 'real'), join(root, 'inner'));
+  });
+  afterAll(async () => {
+    await rm(root, { recursive: true, force: true });
+    await rm(outside, { recursive: true, force: true });
+  });
+
+  it('rejects a symlink that leaves root, and paths below it that do not exist yet', () => {
+    expect(() => resolveInside(root, 'escape')).toThrow(PathError);
+    expect(() => resolveInside(root, 'escape/new/dir')).toThrow(PathError);
+  });
+
+  it('allows symlinks that stay inside root, and a symlinked root', async () => {
+    expect(resolveInside(root, 'inner')).toBe(join(root, 'inner'));
+    const linkedRoot = join(outside, 'root-link');
+    await symlink(root, linkedRoot);
+    expect(resolveInside(linkedRoot, 'real')).toBe(join(linkedRoot, 'real'));
   });
 });

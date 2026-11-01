@@ -54,7 +54,9 @@ export function createServer(deps: ServerDeps): { server: McpServer; runs: RunMa
 
   const resolveRun = (input: { specDir: string; configPath?: string; personas?: string[] }) => {
     const dir = resolveInside(root, input.specDir);
-    const configPath = input.configPath ? resolveInside(root, input.configPath) : findConfig(dir, root);
+    const found = input.configPath ?? findConfig(dir, root);
+    // A found config can be a symlink too: its folder holds the run folder (`.poltergeist/`).
+    const configPath = found === undefined ? undefined : resolveInside(root, found);
     const bad = input.personas?.find((p) => !(PERSONA_IDS as readonly string[]).includes(p));
     if (bad !== undefined) throw new UsageError(`unknown persona: ${bad} (known: ${PERSONA_IDS.join(', ')})`);
     return { specDir: dir, configPath, cwd: root, env: deps.env, ...deps.summonOverrides };

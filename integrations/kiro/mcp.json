@@ -1,8 +1,8 @@
 {
   "mcpServers": {
     "poltergeist": {
-      "command": "npx",
-      "args": ["poltergeist-mcp", "--root", "."],
+      "command": "node",
+      "args": ["/ABSOLUTE/PATH/TO/poltergeist/packages/mcp/bin/poltergeist-mcp.js", "--root", "/ABSOLUTE/PATH/TO/YOUR/PROJECT"],
       "env": {
         "ANTHROPIC_API_KEY": "${ANTHROPIC_API_KEY}"
       },

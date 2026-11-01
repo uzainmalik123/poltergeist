@@ -56,6 +56,7 @@
 | KI-45 | F10 prep review minors: non-JSON dump gives no snippet, `db:dump` gets provider keys, unreadable spec crashes `candy:check`, no-op reset passes determinism, KI-30 note formatting | Minor | F10 | Open |
 | KI-46 | F11 Done-when (a Kiro session on Candy Swap runs summon → report → fix → rehaunt, haunted → clean) not yet run: built against a fixture (D-38) | Major | F11 sign-off | Open |
 | KI-47 | A `rehaunt` (subset) run rewrites `haunting-report.md`/`.json` with every other criterion as `notRun`, so the board loses the full picture | Minor | F14 | Open |
+| KI-48 | F11 review minors: `..foo` names rejected, a failed run isn't `isError`, missing config only fails in the background, misleading report errors (invalid JSON reads as missing; ids absent after a subset run read as unknown), unbounded `abortAll`, `capText` over its limit for tiny caps, missing server-level tests (retry after failure, absolute outside path), npm name `poltergeist-mcp` unreserved | Minor | F13, F14 | Open |
 
 ---
 
@@ -497,4 +498,19 @@
 ### KI-47: `rehaunt` rewrites the full report as a subset · Minor · Open
 - **Problem:** `rehaunt` calls `summon({ only })`, and F08's writer replaces `haunting-report.md`/`.json` whole, so every criterion outside `ids` shows as `notRun`. The CLI's `--only` has the same behaviour.
 - **Next action:** F14, which owns the diff against the previous `verdicts.json`, should merge subset verdicts into the previous full set before rendering.
+
+### KI-48: F11 review minors · Minor · Open
+- **Context:** the final review of F11 (2026-11-01). Its Important findings were fixed before merge (D-38 review fixes).
+- **`..foo` is rejected:** `resolveInside` uses `rel.startsWith('..')`, so a file or folder literally named `..foo` inside root is rejected. Use `rel === '..' || rel.startsWith('..' + sep)`.
+- **A failed run isn't an error:** a run that fails within `waitMs` returns `{status: 'failed', error}` with `isError: false` and no hint. Set `isError` and add a "fix the config or key, then summon again" hint.
+- **Missing config:** when `findConfig` finds nothing, the run starts and fails in the background. Reject it up front with a `UsageError` naming where it looked.
+- **Report errors mislead:**
+  - an unreadable or invalid `haunting-report.json` is reported as missing;
+  - after a subset run (KI-47), a spec criterion that's absent from the report is called "unknown".
+  - Say "unreadable" and "not in the latest report" instead.
+- **`abortAll()` has no time bound.** Shutdown waits for any stage that ignores the signal (KI-43). Race it with about 10 s.
+- **`capText` with a tiny `max`:** the output exceeds `max` when `max` is smaller than the note. It can't happen at 6 000. Clamp `keep` at 0.
+- **Tests:** no server-level test of a new `summon_ghosts` after a failed run, and none of an absolute outside path (`/etc`). The code handles both.
+- **npm name:** `poltergeist-mcp` is unclaimed on npm. Reserve it, or the scoped name, before F13 or F18 point anyone at npx.
+- **Next action:** fold into F13 (the installer touches the same paths) or F14 (`rehaunt` and the report).
 
