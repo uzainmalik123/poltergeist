@@ -1,4 +1,4 @@
-name: CI
+name: Poltergeist CI
 
 on:
   push:
@@ -7,6 +7,10 @@ on:
 
 permissions:
   contents: read
+
+defaults:
+  run:
+    working-directory: poltergeist
 
 jobs:
   health:
@@ -17,6 +21,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
+          cache-dependency-path: poltergeist/package-lock.json
       - run: npm ci
       - run: npx playwright-core install --with-deps chromium
       - run: npm run health

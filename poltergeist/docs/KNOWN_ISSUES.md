@@ -5,7 +5,7 @@
 > **Status:** `Open` · `Investigating` · `Resolved` (add the date and what fixed it) · `Accepted` (we live with it)
 > Add new issues at the bottom with the next ID. Don't delete resolved ones.
 >
-> **KI-01 to KI-23 come from the prototype** (`../poltergeist-old`). File and function names in their notes describe the prototype's code, which this repo does *not* contain (D-25). They're kept because the rebuild faces the same problems: treat each prototype note as "how it was solved last time", and re-check it while rebuilding. KI-24 onward are new. References to `SPEC.md`, `SPEC §6.x` or `R<n>.<m>` in those entries now mean `.kiro/specs/poltergeist/design.md` and requirement `<n>.<m>` in `requirements.md` (D-25).
+> **KI-01 to KI-23 come from the prototype** (`../../../poltergeist-old`). File and function names in their notes describe the prototype's code, which this repo does *not* contain (D-25). They're kept because the rebuild faces the same problems: treat each prototype note as "how it was solved last time", and re-check it while rebuilding. KI-24 onward are new. References to `SPEC.md`, `SPEC §6.x` or `R<n>.<m>` in those entries now mean `.kiro/specs/poltergeist/design.md` and requirement `<n>.<m>` in `requirements.md` (D-25).
 
 | ID | Issue | Severity | Blocks | Status |
 |---|---|---|---|---|
@@ -296,10 +296,10 @@
 - **Still open:** the `leak` test (guard without the dead proxy) could see the same Chromium variant, where a direct-hop failure lands on the original request and isn't reported. That only matters if the guard is installed without `newGuardedContext`, which D-18 forbids.
 
 ### KI-24: Eligibility of a prototyped idea · Major · Open
-- **Context:** F01–F03 were built in a private repo before the window opened (`../poltergeist-old`, first commit 2026-10-30). This repo starts fresh (D-25).
+- **Context:** F01–F03 were built in a private repo before the window opened (`../../../poltergeist-old`, first commit 2026-10-30). This repo starts fresh (D-25).
 - **Risk:** a judge or the rules may see prior work as disqualifying, or may see a fresh repo with very detailed docs on day one and wonder where they came from.
 - **Plan:**
-  - Keep `../poltergeist-old` private and don't publish or link it.
+  - Keep `../../../poltergeist-old` private and don't publish or link it.
   - Don't port code, so every line in this repo is written inside the window, and the git history shows it.
   - In the Devpost write-up, say plainly: "We explored the idea in a throwaway prototype before the event, then rebuilt Poltergeist from scratch during the hacking period. The design docs carried over; the code did not."
   - Most hackathons allow planning before the event but not submitting pre-built code. Confirm this in the 2026 rules (KI-05).
