@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from 'node:crypto';
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { z } from 'zod';
 import { listGenerators } from '../personas/generators/index.js';
@@ -53,6 +53,11 @@ export async function readCache(dir: string, key: string): Promise<CachedResult 
 export async function writeCache(dir: string, key: string, value: CachedResult): Promise<void> {
   await mkdir(dir, { recursive: true });
   const tmp = join(dir, `.${key}.${randomBytes(4).toString('hex')}.tmp`);
-  await writeFile(tmp, JSON.stringify(value, null, 2) + '\n');
-  await rename(tmp, join(dir, `${key}.json`));
+  try {
+    await writeFile(tmp, JSON.stringify(value, null, 2) + '\n');
+    await rename(tmp, join(dir, `${key}.json`));
+  } catch (err) {
+    await rm(tmp, { force: true }).catch(() => undefined);
+    throw err;
+  }
 }

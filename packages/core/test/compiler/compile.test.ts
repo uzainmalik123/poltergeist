@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, readdir } from 'node:fs/promises';
+import { mkdtemp, readFile, readdir, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -236,5 +236,45 @@ describe('compile', () => {
     expect(fake.calls.length).toBe(callsAtReject);
     expect(seen).toEqual([]);
     expect(await readdir(join(outDir, 'plans'))).toEqual([]);
+  });
+});
+
+describe('compile: options for summon (F09, KI-35)', () => {
+  it('recompile skips cache reads but still writes the cache', async () => {
+    const cacheDir = await mkdtemp(join(tmpdir(), 'compile-cache-'));
+    await run(valid(), [CLAIM], { personas: ['wraith'], cacheDir });
+    const before = await readdir(cacheDir);
+    const again = valid();
+    const res = await run(again, [CLAIM], { personas: ['wraith'], cacheDir, recompile: true });
+    expect(again.calls.length).toBe(1);
+    expect(res.cacheHits).toBe(0);
+    expect(res.pairs[0]).toMatchObject({ status: 'compiled', cached: false });
+    expect(await readdir(cacheDir)).toEqual(before);
+  });
+
+  it('rejects duplicate persona ids before any work', async () => {
+    const fake = valid();
+    await expect(run(fake, [CLAIM], { personas: ['wraith', 'wraith'] })).rejects.toThrow(/duplicate persona id: wraith/);
+    expect(fake.calls).toHaveLength(0);
+  });
+
+  it('keeps the result and warns when the cache write fails', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'compile-cache-'));
+    const file = join(dir, 'not-a-dir');
+    await writeFile(file, 'x');
+    const warnings: string[] = [];
+    const res = await run(valid(), [CLAIM], { personas: ['wraith'], cacheDir: file, onWarning: (m) => warnings.push(m) });
+    expect(res.pairs[0]).toMatchObject({ status: 'compiled' });
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toMatch(/^cache write failed:/);
+  });
+
+  it('keeps the result and warns when plan files cannot be written', async () => {
+    const outDir = await mkdtemp(join(tmpdir(), 'compile-out-'));
+    await writeFile(join(outDir, 'plans'), 'x');
+    const warnings: string[] = [];
+    const res = await run(valid(), [CLAIM], { personas: ['wraith'], outDir, onWarning: (m) => warnings.push(m) });
+    expect(res.pairs[0]).toMatchObject({ status: 'compiled' });
+    expect(warnings.some((w) => /^plan write failed:/.test(w))).toBe(true);
   });
 });
