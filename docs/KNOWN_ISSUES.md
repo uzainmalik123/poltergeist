@@ -21,7 +21,7 @@
 | KI-10 | Test-account and login handling for every persona | Major | F03, F06 | Open (Scout half solved in prototype, D-20) |
 | KI-11 | Possible LLM refusals or watered-down plans | Minor | F05 | Open |
 | KI-12 | MCP calls that run for a long time (minutes) may time out in the client | Major | F11 | Open |
-| KI-13 | Resetting state between repetitions with concurrent ghosts | Major | F06 | Open |
+| KI-13 | Resetting state between repetitions with concurrent ghosts | Major | F06 | Investigating (conflict-key scheduling, D-33; partitioning deferred) |
 | KI-14 | LLM cost and rate limits during development | Minor | F05 | Open |
 | KI-15 | Code written in this playtest repo may not count for the main submission | Major | everything | Resolved (2026-10-31, D-25) |
 | KI-16 | Current Kiro-generated `requirements.md` layout is only verified against one hand-edited sample | Minor | F01 | Open |
@@ -44,6 +44,7 @@
 | KI-33 | F04 review minors: BLNS header rule fragile on upstream bumps, no `.gitattributes` for vendored data, `blns.txt` read from source path (packaging), RangeError checked before unknown id, try/catch `.id` assertions | Minor | F09 (packaging) | Open |
 | KI-34 | F05 Done-when (≥ 80% valid or justified `notApplicable`, live LLM) not yet run against the real Candy Swap; KI-01 spike re-scoped to use F05 | Major | F05 sign-off, KI-01 spike | Open |
 | KI-35 | F05 review minors: cache/plan write failure loses paid results, duplicate persona ids, prompt changes not in the cache key (title, snapshot, manual `PROMPT_VERSION`), same path under two identities, unstated prompt limits, backslash `api` paths, theme words via user/app content | Minor | F06, F09 | Open |
+| KI-36 | F06 Done-when (12 ghosts on real Candy Swap in < 5 min) not yet run against the real Candy Swap (built against a fixture, D-33) | Major | F06 sign-off | Open |
 
 ---
 
@@ -155,6 +156,7 @@
   - Or run plans that touch the same route one after another.
 - **Next action:** decide in F06 design. Partitioning is preferred, since Candy Swap can seed N namespaces.
 - **Notes (2026-10-30, F02 done):** `runReset` exists in `@poltergeist/core`. It runs `resetCommand` through the shell in the config file's directory, with a timeout and a process-group kill. *When* it runs and the seed partitioning remain F06 decisions. Still Open.
+- **2026-11-01 (F06 grill, D-33):** reset runs before every rep; reps run one after another. Inside a rep, plans that share a conflict key (route path + a click, dblclick or fill target) never overlap, so two plans claiming the same candy can't spoil each other. Seed partitioning needs app cooperation and is deferred. Still open: plans that conflict through *different* elements (e.g. "claim" and "delete" on the same candy) can still interfere; measure on real Candy Swap (KI-36).
 
 ### KI-14: LLM cost and rate limits during development · Minor · Open
 - **Mitigation:**
@@ -377,4 +379,9 @@
 - **Validation:** `api.path` like `/\evil.test/x` passes; URL resolution treats `\` as `/`. The D-18 guard blocks it at runtime; also reject `\` at compile time.
 - **D-09 scope:** criterion text and app snapshots go into prompts verbatim, so a Halloween-flavoured app or this repo's own spec can put theme words in a prompt. Our own framing stays clean (tested). Decide whether Req 5.6 means "our framing" and say so.
 - **Next action:** fix the write and duplicate-persona items when F09 wires `compile()` into `summon`; the rest when F06 consumes plans or the KI-34 live run shows them.
+
+### KI-36: F06 Done-when not yet run against the real Candy Swap · Major · Open
+- **Context:** F06 was built fixture-first (D-33): F10 isn't built, so there's no real Candy Swap to haunt.
+- **Blocks:** F06 sign-off.
+- **Next action:** once F10 exists, run a full Candy Swap haunting at concurrency 12 and confirm it finishes in < 5 min, and that a Doppelgänger plan's actors leave the barrier < 50 ms apart on real Candy Swap. Record the timing here.
 
