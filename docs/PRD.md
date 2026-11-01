@@ -29,7 +29,7 @@
 | 10 | F08 | Haunting Report | High | Done (fixture; Kiro + Candy Swap check pending, KI-38) | F07 |
 | 11 | F26 | Costume Kit (glyph renderer, sprites, wordmark, palette, possession) | High | TBD | n/a (can run in parallel from week 2) |
 | 12 | F09 | CLI `summon` | High | Done (fixture; real Candy Swap check pending, KI-42) | F08, F26 |
-| 13 | F11 | Kiro MCP Server | High | TBD | F09 |
+| 13 | F11 | Kiro MCP Server | High | Done (fixture, KI-46) | F09 |
 | 14 | F12 | Séance Room (Live) | High | TBD | F06, F26 |
 | 15 | F14 | Re-haunt & Verdict Diff | Med | TBD | F09 |
 | 16 | F15 | Replay Mode & Deployed Séance | Med | TBD | F12 |
@@ -297,7 +297,7 @@ Implements Requirement 12.
   - `ConfigError` and `ResetError` give exit 2.
 - **Done when:** the full Candy Swap run works from a clean clone with `npm ci && npx playwright-core install chromium && npm run summon`.
 
-### F11: Kiro MCP Server · High · TBD
+### F11: Kiro MCP Server · High · Done (fixture, D-38; Kiro check KI-46)
 
 **Owns:** `@poltergeist/mcp` (stdio) with `list_criteria`, `summon_ghosts`, `get_haunting_report` and `rehaunt` (subset without a diff until F14). Implements Requirement 10.1–10.2.
 **Not this feature:** writing into `.kiro/` (F13) · Power packaging (F18).
@@ -472,3 +472,4 @@ Implements Requirement 12.
 - 2026-11-01: **F08 Done against a fixture** (D-35). The report has a board, fix-ready haunted tasks, a 300-line cap that keeps the first task, and a versioned JSON schema. The Kiro and real Candy Swap check is KI-38. Opened KI-39 (timeouts never haunted), KI-40 (draft wordmark until F26) and KI-41 (review minors).
 - 2026-11-01: **F09 Done against a fixture** (D-36). Core `summon()` plus a thin `@poltergeist/cli`: flags, themed board, live ghost block on a colour TTY, exit codes 0/1/2/130, `--seance` loopback event server with replay. Fixed KI-41 (report injection, bidi) and KI-35 (best-effort writes, duplicate personas). The real Candy Swap check is KI-42.
 - 2026-11-01: **F10 prep done** (D-37). Kiro brief, Candy Swap's `poltergeist.config.json`, `npm run candy:check` (F10's Done-when) and a skipped real-spec F01 test. The app itself is built in Kiro (KI-44). Candy Swap is a standalone package, not a root workspace.
+- 2026-11-01: **F11 Done against a fixture** (D-38). `@poltergeist/mcp` (`poltergeist-mcp --root`): five tools including `get_run_status`, long-poll runs (resolves KI-12), 6 000-char results, root-confined paths. `docs/kiro-notes.md` holds the MCP facts (KI-06 Investigating). `integrations/kiro/mcp.json` is the template. The Kiro check is KI-46; the subset-report issue is KI-47 (F14).

@@ -29,7 +29,7 @@ Work happens one PRD feature at a time, through the grill → plan → implement
   - _Requirements: 12.1–12.6_
 - [x] 12. F09 CLI `summon` (fixture; real Candy Swap check pending, KI-42, D-36)
   - _Requirements: 9.1, 9.2_
-- [ ] 13. F11 Kiro MCP Server
+- [x] 13. F11 Kiro MCP Server (fixture; real Kiro + Candy Swap check pending, KI-46, D-38)
   - _Requirements: 10.1, 10.2_
 - [ ] 14. F12 Séance Room (Live)
   - _Requirements: 11.1–11.3_

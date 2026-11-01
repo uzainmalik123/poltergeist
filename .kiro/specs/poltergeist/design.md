@@ -175,9 +175,16 @@ After every run, F09 calls `renderReport` and `writeReport` (`packages/core/src/
 | Tool | Input | Output |
 |---|---|---|
 | `list_criteria` | `{specDir}` | `[{id, text, kind}]` |
-| `summon_ghosts` | `{specDir, configPath?, personas?, reps?}` | `{runId, counts, haunted: [ids], reportPath}`, or `{runId}` with a status tool if KI-12 forces async |
-| `get_haunting_report` | `{specDir, criterion?}` | Markdown section(s) |
-| `rehaunt` | `{specDir, ids}` | `{runId, changes: [{id, from, to}]}` |
+| `summon_ghosts` | `{specDir, configPath?, personas?, reps?, recompile?, waitMs?}` | `{runId, status, counts, haunted, flaky, reportPath, hint}`, or `{runId, status: 'running', progress}` |
+| `get_run_status` | `{runId, waitMs?}` | Same as `summon_ghosts` |
+| `get_haunting_report` | `{specDir, criterion?}` | Header and board, or one criterion's section (JSON fallback) |
+| `rehaunt` | `{specDir, ids, configPath?, personas?, reps?, waitMs?}` | Same as `summon_ghosts`. F14 adds `changes: [{id, from, to}]` |
+
+`packages/mcp` (`poltergeist-mcp --root <dir>`, stdio, D-38):
+- **Long-poll:** run tools wait up to `waitMs` (default 50 s, max 100 s), so no call outlives Kiro's request timeout (KI-12). `get_run_status` keeps waiting.
+- **One run per process.**
+- **Results:** at most 6 000 chars, with ids capped at 20.
+- **Paths:** confined to `--root`. An omitted `configPath` is the nearest `poltergeist.config.json` above `specDir`.
 
 ## 11. Kiro loop (target project)
 
@@ -187,4 +194,4 @@ After every run, F09 calls `renderReport` and `writeReport` (`packages/core/src/
 4. The agent calls `summon_ghosts`, then reads `haunting-report.md`.
 5. The agent fixes the code and calls `rehaunt`. The lines go from possessed to clean.
 
-> Hook triggers, the hook JSON schema, the MCP settings path and the Power format are **unverified** (KI-06). Confirm them in `docs/kiro-notes.md` before F11, F13 or F18.
+> The MCP settings path and format are confirmed in `docs/kiro-notes.md` (F11). Hook triggers, the hook JSON schema and the Power format are still **unverified** (KI-06): re-check them there before F13 or F18.

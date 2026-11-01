@@ -1,0 +1,22 @@
+{
+  "name": "@poltergeist/mcp",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "poltergeist-mcp": "./bin/poltergeist-mcp.js"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "@poltergeist/core": "*",
+    "playwright-core": "1.64.1",
+    "tsx": "4.23.15",
+    "zod": "4.6.7"
+  }
+}

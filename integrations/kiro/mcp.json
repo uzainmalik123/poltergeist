@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "poltergeist": {
+      "command": "node",
+      "args": ["/ABSOLUTE/PATH/TO/poltergeist/packages/mcp/bin/poltergeist-mcp.js", "--root", "/ABSOLUTE/PATH/TO/YOUR/PROJECT"],
+      "env": {
+        "ANTHROPIC_API_KEY": "${ANTHROPIC_API_KEY}"
+      },
+      "autoApprove": ["list_criteria", "get_run_status", "get_haunting_report"]
+    }
+  }
+}
