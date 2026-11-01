@@ -40,6 +40,7 @@ const FORM = page(
   `<h1>Notes</h1>
 <label for="n">Note</label><input id="n">
 <button id="save">Save</button>
+<button>Clear</button><button>Clear</button>
 <p data-testid="saved"></p>
 <p id="late"></p>
 <script>
