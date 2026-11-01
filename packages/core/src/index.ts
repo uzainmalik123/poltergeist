@@ -6,3 +6,4 @@ export * from './personas/index.js';
 export * from './compiler/index.js';
 export * from './runner/index.js';
 export * from './verdicts/index.js';
+export * from './report/index.js';
