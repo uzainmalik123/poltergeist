@@ -1,6 +1,6 @@
 # Poltergeist: Lessons from the prototype
 
-> The prototype (`../poltergeist-old`, private, built 2026-10-30 before the hacking window) got through F01–F03 in about a day: ~36 commits, 236 tests, CI green. This repo rebuilds from scratch (D-25). **This file is the bridge:** what worked, what bit us, and what to build right the first time. It contains no code on purpose. Grill each feature with its section open.
+> The prototype (`../../../poltergeist-old`, private, built 2026-10-30 before the hacking window) got through F01–F03 in about a day: ~36 commits, 236 tests, CI green. This repo rebuilds from scratch (D-25). **This file is the bridge:** what worked, what bit us, and what to build right the first time. It contains no code on purpose. Grill each feature with its section open.
 
 ## Process lessons
 

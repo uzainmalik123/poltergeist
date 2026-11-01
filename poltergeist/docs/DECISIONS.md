@@ -3,7 +3,7 @@
 > A record of important decisions. Add new ones at the bottom with the next ID. To change a decision, don't edit it: add a new one and mark the old one `Superseded by D-xx`.
 > Status values: `Accepted` · `Proposed` (needs team sign-off) · `Superseded`
 >
-> **D-01 to D-22 were made while building the prototype** (`../poltergeist-old`, before the hacking window). They're carried over word for word because they still bind the rebuild. Their dates and "F0x done" notes refer to the prototype. Where the fresh start changed something, the table says so. D-23 onward were made for this repo. References to `SPEC.md`, `SPEC §6.x` or `R<n>.<m>` in those entries now mean `.kiro/specs/poltergeist/design.md` and requirement `<n>.<m>` in `requirements.md` (D-25).
+> **D-01 to D-22 were made while building the prototype** (`../../../poltergeist-old`, before the hacking window). They're carried over word for word because they still bind the rebuild. Their dates and "F0x done" notes refer to the prototype. Where the fresh start changed something, the table says so. D-23 onward were made for this repo. References to `SPEC.md`, `SPEC §6.x` or `R<n>.<m>` in those entries now mean `.kiro/specs/poltergeist/design.md` and requirement `<n>.<m>` in `requirements.md` (D-25).
 
 | ID | Decision | Status |
 |---|---|---|
@@ -29,7 +29,7 @@
 | D-20 | Route Scout rules (F03): one guarded context per identity, heuristic login with optional D-15 field overrides, in-memory storageState, ariaSnapshot-based capture, per-route hash over interactive elements | Accepted (the "fixture first" bullet is superseded by D-25) |
 | D-21 | Route Scout implementation rulings (F03): origin-only `target`, emitted labels and testIds must resolve, hard per-route budget, no summary file, visit-order `onRoute`, exact login-path match, redacted `finalPath` and blocked URLs | Accepted |
 | D-22 | Network guard reports a redirect hop that Chromium only surfaces as the original request's dead-proxy failure, with reason `redirect` (extends D-18) | Accepted |
-| D-23 | Target the **Costume Contest** category (supersedes D-02) | Accepted |
+| D-23 | Target the **Costume Contest** category (supersedes D-02) | Superseded by D-38 |
 | D-24 | The costume is a "haunted terminal": ASCII glyphs via Bayer dither, ectoplasm green for ghosts only, distinct from Reanimator | Accepted |
 | D-25 | Fresh start: new repo inside the hacking window, rebuilt from docs (no ported code), real `.kiro/` spec, new build order | Accepted |
 | D-26 | Costume Kit is its own package and a High feature (F26); possession/exorcism move there from F22 | Accepted |
@@ -45,6 +45,7 @@
 | D-36 | F09 CLI rulings (extends D-17, D-35): fixture-first until F10/F26, `summon()` in core with a thin `@poltergeist/cli`, `parseArgs` flags, exit 0/1/2/130, run folder next to the config, live ghost block only on a colour TTY, loopback `--seance` event server with replay, KI-35/KI-41 fold-ins | Accepted |
 | D-37 | F10 prep rulings (extends D-10, D-01): Kiro builds Candy Swap, we ship only a brief, its Poltergeist config and `npm run candy:check`; URL/script/seed contract; standalone package; bug-neutral prompt | Accepted |
 | D-38 | F11 MCP server rulings (extends D-36, D-01): five snake_case tools, long-poll runs (`waitMs` ≤ 100 s, `get_run_status`), one run per process, 6 000-char results, root-confined paths, `rehaunt` without diff until F14, SDK 1.32.2, fixture Done-when (KI-46) | Accepted |
+| D-39 | Poltergeist becomes the headless red-team **engine inside Reanimator**; the entry is Reanimator/Frankenstein; standalone UI (F12 Séance) and costume (F26) are deprioritised | Accepted |
 
 ---
 
@@ -268,10 +269,10 @@
   - New risks: KI-25 (render performance) and KI-26 (readability after video compression).
 
 ### D-25: Fresh start in a new repo, rebuilt from the docs
-- **Context:** the prototype (now `../poltergeist-old`, private GitHub repo) built F01–F03 before the hacking window. The 2026 rules reportedly count only new projects (KI-05, KI-15). The user asked (2026-10-31) to rename the prototype and start a fresh repo from rewritten docs.
+- **Context:** the prototype (now `../../../poltergeist-old`, private GitHub repo) built F01–F03 before the hacking window. The 2026 rules reportedly count only new projects (KI-05, KI-15). The user asked (2026-10-31) to rename the prototype and start a fresh repo from rewritten docs.
 - **Decision:**
-  - **New repo, new history**, with the first commit inside the hacking window. The prototype stays private and untouched as `../poltergeist-old`.
-  - **Docs carry over, code doesn't.** Decisions, issues and lessons were rewritten here. Source files, tests and implementation plans are **not** copied or ported. Every feature is rebuilt through the grill → plan → implement → review cycle. Agents must not open `../poltergeist-old/packages/` while implementing.
+  - **New repo, new history**, with the first commit inside the hacking window. The prototype stays private and untouched as `../../../poltergeist-old`.
+  - **Docs carry over, code doesn't.** Decisions, issues and lessons were rewritten here. Source files, tests and implementation plans are **not** copied or ported. Every feature is rebuilt through the grill → plan → implement → review cycle. Agents must not open `../../../poltergeist-old/packages/` while implementing.
   - **`.kiro/` is real now** (this is the main project). The spec moved from `docs/SPEC.md` into `.kiro/specs/poltergeist/` (requirements, design, tasks) in Kiro's format, with steering in `.kiro/steering/`. Criterion IDs are `N.M` (D-16), so F01 can read its own spec.
   - **Build order changes** (PRD): F10 Candy Swap is built in Kiro before F03, so Scout is tested on the real app (this replaces D-20's "fixture first"). A KI-01 spike runs before F05.
 - **Consequences:**
@@ -540,3 +541,15 @@
   - F14 adds the verdict diff to `rehaunt`, and should merge subset results into the full report (KI-47).
   - F18 bundles the same server.
   - If Kiro proves to honour long `requestTimeout`s, the default `waitMs` can go up.
+
+### D-39: Poltergeist is the headless engine inside Reanimator (supersedes D-23)
+- **Context (2026-11-01):** the team merged Poltergeist with the teammate's **Reanimator** concept into one Kiroween entry, built in this repo (the eligible one). The repo was split into two sibling projects: `reanimator/` (the product and all UI/art) and `poltergeist/` (this engine). See the repo-root `AGENTS.md` and `reanimator/docs/`.
+- **Decision:**
+  - The submission is **Reanimator**, in **Frankenstein** (a mash-up). Poltergeist is a component, not a separate entry. This supersedes D-23 (Costume Contest) and, with it, D-02.
+  - **Poltergeist runs headless.** Reanimator renders everything, including "Death's attack", which is a visualisation of a Poltergeist run. Reanimator calls this engine (CLI `summon` / MCP / report JSON) and never re-implements it.
+  - **Deprioritised in the engine:** F12 Séance Room and F26 Costume Kit (the standalone "haunted terminal" look). The one look is Reanimator's necromancer dot-matrix style (`reanimator/docs/THEME.md`). The CLI, the report and the MCP server remain the engine's real interfaces.
+  - **Personas are framed as Death's minions**, each a class of adversarial test (`reanimator/docs/DECISIONS.md` D-R5). This does **not** change the engine's safety stance: D-04 (no LLM-written payloads; vetted static inputs + generators), D-05 (localhost-only targets) and D-08 (QA/robustness, not an exploit tool) all stand. F25 stays scrapped.
+- **Consequences:**
+  - The core engine path (F01–F09, F11, F14) is what Reanimator needs. F12 and F26 can be dropped from scope unless time allows.
+  - Priorities now serve Reanimator's build order (`reanimator/docs/PRD.md`): a clean way to point the engine at a served localhost app and return a report that Reanimator can draw as wounds.
+  - Poltergeist's own `docs/PRD.md` category/costume items are now secondary; this decision governs.

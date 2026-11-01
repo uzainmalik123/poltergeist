@@ -21,7 +21,7 @@ Tests never call the network: they inject a fake `LlmClient`.
 
 ## Global Constraints
 
-- Fresh code only (D-25). Never open `../poltergeist-old`.
+- Fresh code only (D-25). Never open `../../../poltergeist-old`.
 - Versions are pinned exactly (`npm i -E -w @poltergeist/core @anthropic-ai/sdk@1.3.0`). Update STACK.md's "Installed here?" column.
 - `npm run health` stays green after every task (D-19).
 - The LLM never writes input values (D-04, D-32): `fill.input` is only `{ generator: GeneratorId }`, and there is no `literal`.
