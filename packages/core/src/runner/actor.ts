@@ -52,6 +52,12 @@ export function currentStep(run: ActorRun): StepResult | undefined {
   return run.steps.findLast((s) => ACTIONS.has(s.type)) ?? run.steps.at(-1);
 }
 
+/** A `forbidden` report marks the step that caused it, unless that step already failed or timed out (KI-37). */
+export function markBlockedByRule(run: ActorRun): void {
+  const step = currentStep(run);
+  if (step?.outcome === 'ok') step.outcome = 'blocked-by-rule';
+}
+
 /**
  * Runs one actor's steps in order (Req 6, D-33) and stops at the first step that isn't `ok`. Actions time
  * out after `stepTimeoutMs`. Barrier waits have no step timeout; the plan timeout bounds them. The actor

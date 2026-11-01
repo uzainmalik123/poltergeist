@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { runPlans } from '../../src/runner/run.js';
 import type { PairRepResult } from '../../src/runner/types.js';
 import { guardLaunchOptions } from '../../src/safety/guard.js';
+import { computeVerdicts } from '../../src/verdicts/compute.js';
 import { sessionState, startClaimsFixture, type ClaimsFixture } from './claims-fixture.js';
 import { loadFor, plan } from './run-helpers.js';
 
@@ -44,6 +45,9 @@ describe('F06 Done-when (fixture)', () => {
     for (const g of gaps) expect(g).toBeLessThan(50);
     const haunted = r.results.filter((x) => x.assertions[0]?.ok === false).length;
     expect(haunted).toBeGreaterThanOrEqual(2);
+    // F07: the same race reproduces as a haunted verdict (D-34).
+    const v = computeVerdicts([{ status: 'compiled', criterion: '3.2', persona: 'doppelganger', plan: p, cached: false, attempts: 1 }], r);
+    expect(v.pairs[0]?.verdict).toBe('haunted');
   });
 
   it('runs 12 ghosts at once and finishes quickly', async () => {

@@ -126,6 +126,41 @@ describe('runPlans', () => {
     expect(performance.now() - t).toBeLessThan(4000);
   });
 
+  it('records the steps in flight at a plan timeout as timeouts and emits nothing for them', async () => {
+    const p = plan(
+      '6.2',
+      'doppelganger',
+      { a: [{ goto: '/claims' }, { barrier: 'x' }], b: [{ goto: '/claims' }, { wait: 4000 }, { barrier: 'x' }] },
+      [{ noConsoleErrors: true }],
+    );
+    const seen: RunEvent[] = [];
+    const r = await runPlans(browser, loadFor(fixture.origin), [p], { sessions, reps: 1, frameFps: 0, planTimeoutMs: 1000, onEvent: (e) => seen.push(e) });
+    const res = r.results[0]!;
+    expect(res.outcome).toBe('timeout');
+    const inFlight = res.steps.filter((st) => st.index === 1);
+    expect(inFlight.map((st) => [st.actor, st.type, st.outcome, st.error])).toEqual([
+      ['a', 'barrier', 'timeout', 'plan exceeded 1000 ms'],
+      ['b', 'wait', 'timeout', 'plan exceeded 1000 ms'],
+    ]);
+    expect(seen.filter((e) => e.type === 'ghost.step' && e.index === 1)).toEqual([]);
+    const before = JSON.stringify(res.steps);
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    expect(JSON.stringify(res.steps)).toBe(before);
+  }, 15_000);
+
+  it('names the root cause, not the broken barrier, in the rep error', async () => {
+    const p = plan(
+      '6.3',
+      'doppelganger',
+      { a: [{ goto: '/claims' }, { barrier: 'x' }], b: [{ goto: '/claims' }, { login: { account: 'nobody' } }, { barrier: 'x' }] },
+      [{ noConsoleErrors: true }],
+    );
+    const [res] = (await runPlans(browser, loadFor(fixture.origin), [p], { sessions, reps: 1, frameFps: 0 })).results;
+    expect(res?.outcome).toBe('planError');
+    expect(res?.error).toContain('unknown account');
+    expect(res?.error).not.toContain('barrier');
+  });
+
   it('keeps a screenshot and trace for a failed rep only', async () => {
     const outDir = await mkdtemp(join(tmpdir(), 'run-'));
     const failing = plan('7.1', 'wraith', { a: [{ goto: '/form' }] }, [{ textVisible: 'Nope' }], [{ path: '/form', identity: 'anonymous' }]);

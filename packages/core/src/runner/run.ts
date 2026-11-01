@@ -6,7 +6,7 @@ import type { LoadedConfig } from '../config/load.js';
 import { runReset, type ResetResult } from '../config/reset.js';
 import { compileForbidden } from '../safety/forbidden.js';
 import { newGuardedContext, type BlockedRequest } from '../safety/guard.js';
-import { startActor, currentStep, type ActorRun } from './actor.js';
+import { markBlockedByRule, startActor, type ActorRun } from './actor.js';
 import { ASSERT_POLL_MS, runAssertions, type ConsoleRecord } from './assertions.js';
 import { BarrierSet } from './barrier.js';
 import { RunnerSafetyError } from './errors.js';
@@ -203,8 +203,7 @@ async function runPair(plan: HauntingPlan, rep: number, s: Shared): Promise<Pair
         if (action === 'abort-run') s.onLeak(b);
         else if (action === 'blocked-by-rule') {
           const run = actors.find((a) => a.name === name)?.run;
-          const step = run && currentStep(run);
-          if (step) step.outcome = 'blocked-by-rule';
+          if (run) markBlockedByRule(run);
         }
       };
       const context = await newGuardedContext(
@@ -228,6 +227,10 @@ async function runPair(plan: HauntingPlan, rep: number, s: Shared): Promise<Pair
     }
 
     const seed = pairSeed(s.seed, plan.criterion, plan.persona);
+    // A plan timeout stops this pair's actors at their next step and silences their step events (KI-37).
+    const pairStop = new AbortController();
+    const signal = AbortSignal.any([s.signal, pairStop.signal]);
+    const finished = new Set<ActorName>();
     const runs = actors.map((a) => {
       const started = startActor(plan.actors[a.name] ?? [], {
         actor: a.name,
@@ -239,29 +242,45 @@ async function runPair(plan: HauntingPlan, rep: number, s: Shared): Promise<Pair
         barriers,
         seed,
         stepTimeoutMs: s.stepTimeoutMs,
-        signal: s.signal,
-        onStep: (r, xy) => sink.emit({ type: 'ghost.step', ghostId: a.ghost, index: r.index, step: r.type, outcome: r.outcome, ...xy }),
+        signal,
+        onStep: (r, xy) => {
+          if (!pairStop.signal.aborted) sink.emit({ type: 'ghost.step', ghostId: a.ghost, index: r.index, step: r.type, outcome: r.outcome, ...xy });
+        },
       });
       a.run = started.run;
+      void started.done.then(() => finished.add(a.name));
       return started;
     });
     const all = Promise.all(runs.map((r) => r.done));
     const budget = timer(Math.max(0, planStart + s.planTimeoutMs - Date.now()));
     const timedOut = await Promise.race([all.then(() => false), budget.done.then(() => true)]).finally(budget.cancel);
+    const timeoutError = `plan exceeded ${s.planTimeoutMs} ms`;
+    if (timedOut) pairStop.abort();
+    // A copy, so steps still running can't change the result after this point; a step in flight at a
+    // plan timeout is recorded as a timeout.
+    result.steps = actors.flatMap((a) => {
+      const steps = a.run!.steps;
+      return steps.map((st, i) =>
+        timedOut && !finished.has(a.name) && i === steps.length - 1 ? { ...st, outcome: 'timeout' as const, error: timeoutError } : { ...st },
+      );
+    });
     if (timedOut) {
       for (const a of actors) {
         barriers.leave(a.name);
         a.holds.releaseAll();
       }
     }
-    result.steps = actors.flatMap((a) => a.run!.steps);
 
     const ends = actors.map((a) => a.run!.end);
     let outcome: RepOutcome = 'completed';
     let error: string | undefined;
-    if (timedOut) [outcome, error] = ['timeout', `plan exceeded ${s.planTimeoutMs} ms`];
+    if (timedOut) [outcome, error] = ['timeout', timeoutError];
     else if (ends.includes('timeout')) [outcome, error] = ['timeout', actors.find((a) => a.run!.end === 'timeout')!.run!.error];
-    else if (ends.some((e) => e !== 'done')) [outcome, error] = ['planError', actors.find((a) => a.run!.end !== 'done')!.run!.error];
+    else if (ends.some((e) => e !== 'done')) {
+      // A broken barrier is a symptom: name the actor that ended first for a reason of its own.
+      const ended = actors.filter((a) => a.run!.end !== 'done');
+      [outcome, error] = ['planError', (ended.find((a) => a.run!.end !== 'broken') ?? ended[0]!).run!.error];
+    }
 
     if (outcome === 'completed') {
       const first = actors[0]!;
