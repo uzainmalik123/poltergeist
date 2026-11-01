@@ -60,7 +60,7 @@ No database SaaS: Candy Swap uses local SQLite, and Poltergeist stores everythin
 |---|---|
 | `@poltergeist/core` | playwright-core, zod, unified, remark-parse, mdast-util-to-string, fast-check, @anthropic-ai/sdk, ws |
 | `@poltergeist/costume` | none at runtime |
-| `@poltergeist/cli` | core, costume |
+| `@poltergeist/cli` | core, playwright-core, ws, tsx (runs the bin from source, D-36); costume once F26 lands |
 | `@poltergeist/mcp` | core, @modelcontextprotocol/sdk |
 | `@poltergeist/seance` | react, vite, tailwind, costume (event types from core) |
 | `candy-swap` (fixture) | hono, better-sqlite3 |
@@ -75,7 +75,7 @@ The prototype (2026-10-30) installed and verified these versions. Reuse them unl
 | vitest | 4.1.12 | root dev | yes |
 | eslint / @eslint/js | 9.39.1 | root dev | yes |
 | typescript-eslint | 8.72.1 | root dev | yes |
-| tsx | 4.23.15 | root dev | yes |
+| tsx | 4.23.15 | root dev, cli (bin runner) | yes |
 | @types/node | 22.20.5 | root dev | yes |
 | unified | 11.0.5 | core | yes |
 | remark-parse | 11.0.0 | core | yes |
@@ -83,8 +83,8 @@ The prototype (2026-10-30) installed and verified these versions. Reuse them unl
 | @types/mdast | 4.0.4 | core dev | yes |
 | zod | 4.6.7 | core | yes |
 | playwright-core | 1.64.1 | core | yes |
-| ws | 8.22.0 | core dev (guard test fixture) | yes |
-| @types/ws | 8.18.2 | core dev | yes |
+| ws | 8.22.0 | core dev (guard test fixture), cli (`--seance` event server) | yes |
+| @types/ws | 8.18.2 | core dev, cli dev | yes |
 | fast-check | 4.10.2 | core | yes |
 | @anthropic-ai/sdk | 1.3.0 | core (F05 compiler) | yes |
 | Big List of Naughty Strings | commit `db33ec7` (vendored, MIT) | core `src/personas/generators/data/` | yes |

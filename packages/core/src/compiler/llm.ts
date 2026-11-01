@@ -13,6 +13,8 @@ export type LlmRequest = {
   turns: LlmTurn[];
   /** For fakes and logs only; never sent to the provider. */
   meta: { criterion: string; persona: PersonaId; attempt: 1 | 2 };
+  /** Cancels the request (Ctrl-C). */
+  signal?: AbortSignal;
 };
 
 export type LlmResponse =
@@ -38,7 +40,7 @@ export function createAnthropicClient(opts: { anthropic?: Pick<Anthropic, 'messa
       anthropic ??= new Anthropic();
       let message: Anthropic.Message;
       try {
-        message = await anthropic.messages.create({
+        const body: Anthropic.MessageCreateParamsNonStreaming = {
           model: req.model,
           max_tokens: opts.maxTokens ?? DEFAULT_MAX_TOKENS,
           system: req.system,
@@ -47,7 +49,8 @@ export function createAnthropicClient(opts: { anthropic?: Pick<Anthropic, 'messa
               t.role === 'user' ? { role: 'user', content: t.text } : { role: 'assistant', content: t.raw as Anthropic.ContentBlockParam[] },
           ),
           output_config: { format: { type, schema } },
-        });
+        };
+        message = await (req.signal ? anthropic.messages.create(body, { signal: req.signal }) : anthropic.messages.create(body));
       } catch (err) {
         if (err instanceof Anthropic.AuthenticationError || err instanceof Anthropic.PermissionDeniedError) {
           throw new CompilerError(`The LLM provider rejected the credentials (HTTP ${err.status}).`, { cause: err });

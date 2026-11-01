@@ -27,6 +27,13 @@ const message = (over: Record<string, unknown>) => ({
 });
 
 describe('createAnthropicClient', () => {
+  it('passes the abort signal to the SDK request (F09 review)', async () => {
+    const { create, client } = stub(async () => message({}));
+    const ac = new AbortController();
+    await client.complete({ ...req, signal: ac.signal });
+    expect(create.mock.calls[0]![1]).toEqual({ signal: ac.signal });
+  });
+
   it('sends system, mapped turns, model and json output format', async () => {
     const { create, client } = stub(async () => message({}));
     await client.complete(req);

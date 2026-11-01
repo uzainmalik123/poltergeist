@@ -190,3 +190,26 @@ describe('scout output', () => {
     }
   }, 30000);
 });
+
+describe('scout: abort (F09 review)', () => {
+  it('stops between routes when the signal aborts', async () => {
+    const ac = new AbortController();
+    const seen: string[] = [];
+    const dir = await mkdtemp(join(tmpdir(), 'scout-abort-'));
+    try {
+      const p = scout(browser, load(fixture.origin), {
+        outDir: dir,
+        routeTimeoutMs: ROUTE_MS,
+        signal: ac.signal,
+        onRoute: (r) => {
+          seen.push(r.path);
+          ac.abort(new Error('stop'));
+        },
+      });
+      await expect(p).rejects.toThrow('stop');
+      expect(seen).toHaveLength(1);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  }, 30000);
+});

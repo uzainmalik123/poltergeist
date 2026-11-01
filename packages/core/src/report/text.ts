@@ -2,10 +2,24 @@ import type { Assertion, PlanTarget, Step } from '../compiler/dsl.js';
 
 const MAX = 200;
 
-/** Untrusted text on one line: whitespace runs (incl. newlines, \u2028, \u2029) become one space, capped with `…`. */
+/** Controls, bidi controls and invisible characters that would hide or reorder text (KI-41). */
+// eslint-disable-next-line no-control-regex -- matching control characters is the point
+const HIDDEN = /[\u0000-\u001F\u007F-\u009F\u00AD\u061C\u200B-\u200F\u202A-\u202E\u2060\u2066-\u2069\uFEFF]/g;
+const hex = (c: string) => `\\u${c.charCodeAt(0).toString(16).toUpperCase().padStart(4, '0')}`;
+
+/**
+ * Untrusted text on one line: whitespace runs (incl. newlines, \u2028, \u2029, NBSP) become one space,
+ * hidden characters become visible `\uXXXX` text, capped with `…`.
+ */
 export function oneLine(s: string, max = MAX): string {
-  const flat = s.replace(/[\s\u2028\u2029]+/g, ' ').trim();
+  // U+FEFF counts as \s in JS, so it is made visible before whitespace is collapsed.
+  const flat = s.replace(/\uFEFF/g, hex).replace(/[\s\u2028\u2029]+/g, ' ').trim().replace(HIDDEN, hex);
   return flat.length <= max ? flat : `${flat.slice(0, max - 1)}…`;
+}
+
+/** `oneLine`, then escaped for markdown prose outside code spans: no HTML, entities, links, emphasis or headings (KI-41). */
+export function mdText(s: string, max = MAX): string {
+  return oneLine(s, max).replace(/[\\`*_[\]<>#|&]/g, '\\$&');
 }
 
 /** A markdown code span that survives backticks inside it (CommonMark: the fence outlasts any run). */

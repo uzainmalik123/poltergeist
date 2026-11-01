@@ -28,7 +28,7 @@
 | 9 | F07 | Verdicts & Flake Filter | High | Done | F06 |
 | 10 | F08 | Haunting Report | High | Done (fixture; Kiro + Candy Swap check pending, KI-38) | F07 |
 | 11 | F26 | Costume Kit (glyph renderer, sprites, wordmark, palette, possession) | High | TBD | n/a (can run in parallel from week 2) |
-| 12 | F09 | CLI `summon` | High | TBD | F08, F26 |
+| 12 | F09 | CLI `summon` | High | Done (fixture; real Candy Swap check pending, KI-42) | F08, F26 |
 | 13 | F11 | Kiro MCP Server | High | TBD | F09 |
 | 14 | F12 | Séance Room (Live) | High | TBD | F06, F26 |
 | 15 | F14 | Re-haunt & Verdict Diff | Med | TBD | F09 |
@@ -279,7 +279,9 @@ Implements Requirement 12.
   - Possession and exorcism play on a sample board line.
   - The page stays readable in a 1080p recording uploaded to YouTube as unlisted (KI-26).
 
-### F09: CLI `summon` · High · TBD
+### F09: CLI `summon` · High · Done (fixture)
+
+> 2026-11-01: built fixture-first (D-36). Plan `docs/plans/2026-11-01-F09-cli-summon.md`. Core's `summon()` (`packages/core/src/summon/`) orchestrates config → spec → scout → compile → run → verdicts → report and writes `run.json`, `verdicts.json` and the summon events. `@poltergeist/cli` (bin `poltergeist`, run through tsx) parses the flags, draws the wordmark, a live ghost block on a colour TTY and the final board, maps exit codes 0/1/2/130, and serves `--seance` events on `127.0.0.1:6660`. `packages/cli/test/done-when.test.ts` runs the claims fixture's race end to end and exits 1. KI-41's injection and bidi items and KI-35's write and duplicate-persona items are fixed. **Still to do:** `npm run summon` on real Candy Swap from a clean clone (KI-42), and F26's wordmark and sprites in the terminal (KI-40).
 
 **Owns:** the `poltergeist` binary, `summon`, its flags, themed terminal output and exit codes. Implements Requirement 9.1–9.2.
 **Not this feature:** `--only` diffs (F14) · `init` (F13) · `replay` (F15).
@@ -466,3 +468,4 @@ Implements Requirement 12.
 - 2026-11-01: **F07 Done** (D-34). Pure `computeVerdicts`: ⌈2N/3⌉ of requested reps, app-only failures, forbidden blocks void a rep, `uncompilable` rolls up as `inconclusive`. KI-37's timeout, attribution and rep-error items fixed in the runner.
 - 2026-10-31: **F04 Done** (D-31). Three core personas, eight deterministic generators (adds `plain`), vendored BLNS without injection sections. KI-32 opened (typed inputs).
 - 2026-11-01: **F08 Done against a fixture** (D-35). The report has a board, fix-ready haunted tasks, a 300-line cap that keeps the first task, and a versioned JSON schema. The Kiro and real Candy Swap check is KI-38. Opened KI-39 (timeouts never haunted), KI-40 (draft wordmark until F26) and KI-41 (review minors).
+- 2026-11-01: **F09 Done against a fixture** (D-36). Core `summon()` plus a thin `@poltergeist/cli`: flags, themed board, live ghost block on a colour TTY, exit codes 0/1/2/130, `--seance` loopback event server with replay. Fixed KI-41 (report injection, bidi) and KI-35 (best-effort writes, duplicate personas). The real Candy Swap check is KI-42.

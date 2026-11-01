@@ -42,6 +42,7 @@
 | D-33 | F06 runner rulings (extends D-06, D-18, D-22): fixture-first, injected browser, raw per-rep results for F07, conflict-key scheduling instead of seed partitioning, shared-session Doppelgänger, same inputs every rep, rendezvous barrier, context-route holds, leak aborts the run, overlay in a closed shadow root, login traces dropped | Accepted |
 | D-34 | F07 verdict rulings (extends D-06): pure `computeVerdicts`, N = requested reps, same assertion = plan index, only `failure: 'app'` counts, forbidden blocks void a rep, `clean` needs ⌈2N/3⌉ clean reps, `uncompilable` rolls up as `inconclusive`, KI-37 timeout/attribution fixes folded in | Accepted |
 | D-35 | F08 report rulings (extends D-14): pure render + atomic two-file write, fix-ready haunted tasks, 300-line hard cap with JSON overflow, versioned JSON schema, draft wordmark and glyphs in core until F26, fixture-first Done-when | Accepted |
+| D-36 | F09 CLI rulings (extends D-17, D-35): fixture-first until F10/F26, `summon()` in core with a thin `@poltergeist/cli`, `parseArgs` flags, exit 0/1/2/130, run folder next to the config, live ghost block only on a colour TTY, loopback `--seance` event server with replay, KI-35/KI-41 fold-ins | Accepted |
 
 ---
 
@@ -435,3 +436,30 @@
   - The 300-line cap never drops the first haunted section before the board. A hard cut with the JSON pointer is the last resort.
   - Pairs show `failed k/N reps (only r ran)` when reps are missing, plus a "Run notes" line (or an inline note when flaky) with F07's rep notes.
 - **Consequences:** F09 calls `writeReport` after every run and prints its own board. F11's `get_haunting_report` reads the JSON schema.
+
+### D-36: F09 CLI rulings (extends D-17, D-35)
+- **Context:** grilling F09 (2026-11-01). F10 (Candy Swap) and F26 (Costume Kit) don't exist yet. The user asked to accept the recommended answers.
+- **Decision:**
+  - **Fixture-first** (like D-30, D-32–D-35): F09 is built and tested against the claims fixture with a fake `LlmClient`. The real `npm run summon` on Candy Swap from a clean clone is KI-42. Until F26 lands, the CLI uses core's `DRAFT_WORDMARK`, `VERDICT_GLYPHS` and persona initials (KI-40).
+  - **Shape:** `summon(opts)` in `packages/core/src/summon/` orchestrates config → spec → scout → compile → run → verdicts → report, with an injected `llm`, browser launcher and `onEvent`, so F11 and F12 can reuse it (design §1). It returns `{ runId, runDir, verdicts, reportPaths, … }`. `packages/cli` (`@poltergeist/cli`, bin `poltergeist`) owns argument parsing, terminal output, exit codes and the WebSocket server. The bin runs TypeScript through tsx: no build step and no npm publish yet (KI-33 packaging stays open).
+  - **Flags** (`node:util` `parseArgs`): `--spec <dir>` (required), `--config <path>`, `--only <ids>` (filter only; F14 adds the diff), `--personas <ids>` (validated and deduped), `--reps <1–10>`, `--recompile` (skips cache reads, still writes the cache), `--seance`, `--help`. An unknown flag, an unknown criterion or persona id, or a spec with zero selected criteria is a usage error.
+  - **Exit codes:** 0 when nothing is haunted (flaky and inconclusive are listed but don't fail). 1 when any criterion is haunted. 2 on a usage error, `ConfigError`, `SpecNotFoundError`, `CompilerError`, `RunnerSafetyError`, a Chromium launch failure (with the install hint), port 6660 in use, any unexpected error, or a reset failure on every rep (the runner records reset failures as `systemError` reps instead of throwing, so this is how `ResetError` maps to 2; the report is still written). Ctrl-C aborts the run and exits 130 without writing a report.
+  - **Run folder:** `.poltergeist/` next to the config file. `runId` is `YYYYMMDD-HHMMSS-xxxx` (UTC, random hex). F09 writes `run.json` (config snapshot, spec hash, `scoutHash`, model, options, timings) and `verdicts.json`, and appends `run.started`, `scout.route`, `plan.compiled`, `verdict.pair`, `verdict.criterion` and `run.finished` to the same `events.ndjson` through the runner's event sink.
+  - **Terminal:** the wordmark and a one-line summary first. On a TTY with colour on, a live block with one line per active ghost (`W  wraith  3.2  r1  click`), the ghost part in `--ecto`, redrawn in place. With `NO_COLOR` set or no TTY, plain append-only phase lines and no animation. At the end, the board (verdict glyph, id, text clipped to the width; THEME colours as 24-bit ANSI), the counts and the report path.
+  - **`--seance`:** a `ws` server on `127.0.0.1:6660` at `/runs/<runId>`, started only with the flag and before scouting. It broadcasts every event, frames included, and replays the buffered non-frame events to clients that join late. The Séance page itself (`:6661`) is F12's.
+  - **Fold-ins:** KI-41 markdown injection and bidi/invisible escaping in the report (before F09 writes real reports). KI-35: cache and plan writes are best-effort, and duplicate persona ids are rejected. KI-37: a 2-actor plan at `concurrency: 1` gets a warning (the runner clamps).
+  - **Done-when (fixture):** an in-process `main(argv, deps)` test runs `summon` end to end on the claims fixture with a fake LLM and checks exit 1, the board, the report and the run folder. Spawned-binary tests check `--help` and that a bad config exits 2.
+- **Implementation notes (2026-11-01):**
+  - `createEventSink` is generic over the event union, so `summon()` writes its events into the runner's `events.ndjson` (flushed before `runPlans` starts and after it ends, so lines never interleave).
+  - `--personas` duplicates are dropped by `summon()`; `compile()` itself rejects them (`RangeError`).
+  - `oneLine` now makes controls, bidi controls and invisible characters visible as `\uXXXX` everywhere (report and terminal), and a new `mdText` escapes markdown outside code spans.
+  - The terminal shows one line per scouted route and one per rep. Without colour there are no per-step lines. On a colour TTY, `LiveBlock.log` prints phase lines above the live ghost block.
+  - The event server closes clients gracefully (code 1001), so `run.finished` reaches them.
+- **Review fixes (2026-11-01):**
+  - Chromium launches with `summonLaunchOptions()` (guarded, `handleSIGINT: false`), so Ctrl-C goes through the CLI's abort path instead of Playwright's `process.exit(130)`.
+  - `compile()` and `scout()` take a `signal`: no LLM call starts after an abort, calls in flight are cancelled (`LlmRequest.signal` goes to the SDK), and scouting stops before the next identity or route.
+  - The `--seance` server accepts browser clients only from loopback origins (`localhost`, `127.0.0.1`, `[::1]`); clients with no `Origin` are allowed.
+  - `mdText` also escapes `&`, so HTML entities stay literal.
+  - Deferred minors are in KI-43.
+- **Consequences:** F11 and F12 call core's `summon()`. F14 adds the `--only` diff on top of `verdicts.json`. F26 replaces the CLI's draft wordmark and initials.
+

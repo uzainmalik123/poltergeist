@@ -6,7 +6,7 @@ import type { Verdicts } from '../verdicts/compute.js';
 import type { CriterionVerdict, PairVerdictRecord } from '../verdicts/types.js';
 import { DRAFT_WORDMARK, VERDICT_GLYPHS } from './glyphs.js';
 import type { ReportJson } from './schema.js';
-import { codeSpan, describeAssertion, describeStep, oneLine } from './text.js';
+import { codeSpan, describeAssertion, describeStep, mdText } from './text.js';
 
 /** Hard cap on `haunting-report.md` (PRD F08, D-35). The JSON always has everything. */
 export const REPORT_MAX_LINES = 300;
@@ -67,10 +67,10 @@ export function renderReport(input: ReportInput): RenderedReport {
     input.wordmark ?? DRAFT_WORDMARK,
     '```',
     '',
-    `Run ${codeSpan(run.runId)} against ${codeSpan(run.target)} · ${run.reps} reps · ${oneLine(run.model, 80)} · ${new Date(run.startedAt).toISOString()}`,
+    `Run ${codeSpan(run.runId)} against ${codeSpan(run.target)} · ${run.reps} reps · ${mdText(run.model, 80)} · ${new Date(run.startedAt).toISOString()}`,
     `**${counts.haunted} haunted** [!!] · ${counts.flaky} flaky [~~] · ${counts.inconclusive} inconclusive [??] · ${counts.clean} clean [ok] · ${counts.notApplicable} n/a [--] · ${counts.notRun} not run [  ]`,
   ].join('\n').split('\n');
-  const board = rows.map((r) => `- ${VERDICT_GLYPHS[r.verdict]} ${r.c.id} — ${oneLine(r.c.text)}`);
+  const board = rows.map((r) => `- ${VERDICT_GLYPHS[r.verdict]} ${r.c.id} — ${mdText(r.c.text)}`);
   const haunted = rows.filter((r) => r.verdict === 'haunted').map((r) => hauntedSection(r.c, r.pairs));
   const flaky = rows.filter((r) => r.verdict === 'flaky').map((r) => flakySection(r.c, r.pairs));
   const inconclusive = rows.flatMap((r) =>
@@ -143,22 +143,22 @@ const failedLine = (p: JsonPair) =>
   `failed ${p.failing[0]?.failures ?? 0}/${p.reps} reps${p.repsRun < p.reps ? ` (only ${p.repsRun} ran)` : ''}`;
 
 function promise(c: Criterion): string {
-  return `**Promise:** \`requirements.md\` line ${c.line}, Requirement ${c.requirementId} (${oneLine(c.requirement, 80)}): ${codeSpan(c.text)}`;
+  return `**Promise:** \`requirements.md\` line ${c.line}, Requirement ${c.requirementId} (${mdText(c.requirement, 80)}): ${codeSpan(c.text)}`;
 }
 
 /** A fix-ready task (Req 8.2): the promise, persona, steps, expected vs actual, artifacts. */
 function hauntedSection(c: Criterion, pairs: JsonPair[]): string[] {
-  const out = ['', `### ${VERDICT_GLYPHS.haunted} ${c.id} — ${oneLine(c.text)}`, '', promise(c)];
+  const out = ['', `### ${VERDICT_GLYPHS.haunted} ${c.id} — ${mdText(c.text)}`, '', promise(c)];
   for (const p of pairs.filter((x) => x.verdict === 'haunted')) {
     out.push('', `#### ${p.persona} — ${failedLine(p)}`);
-    if (p.intent) out.push('', `**Intent:** ${oneLine(p.intent)}`);
+    if (p.intent) out.push('', `**Intent:** ${mdText(p.intent)}`);
     if (p.steps) {
       const actors: [string, string[]][] = p.steps.b ? [['Actor a:', p.steps.a], ['Actor b:', p.steps.b]] : [['Steps:', p.steps.a]];
       for (const [label, steps] of actors) out.push('', label, '', ...steps.map((s, i) => `${i + 1}. ${s}`));
     }
     if (p.failedReps.length) out.push('', `**Failed in reps:** ${p.failedReps.join(', ')}`);
     for (const f of p.failing) {
-      out.push('', `**Expected:** ${f.expected}`, '', `**Actual** (failed ${f.failures}/${p.reps} reps, last seen): ${codeSpan(f.lastDetail)}`);
+      out.push('', `**Expected:** ${mdText(f.expected)}`, '', `**Actual** (failed ${f.failures}/${p.reps} reps, last seen): ${codeSpan(f.lastDetail)}`);
     }
     if (p.notes.length) out.push('', `**Run notes:** ${codeSpan(p.notes.join('; '))}`);
     if (p.artifacts.length) {
@@ -171,11 +171,11 @@ function hauntedSection(c: Criterion, pairs: JsonPair[]): string[] {
 }
 
 function flakySection(c: Criterion, pairs: JsonPair[]): string[] {
-  const out = ['', `### ${VERDICT_GLYPHS.flaky} ${c.id} — ${oneLine(c.text)}`, ''];
+  const out = ['', `### ${VERDICT_GLYPHS.flaky} ${c.id} — ${mdText(c.text)}`, ''];
   for (const p of pairs.filter((x) => x.verdict === 'flaky')) {
     const f = p.failing[0]!;
     const other = p.notes.length ? ` (run notes: ${codeSpan(p.notes.join('; '))})` : '';
-    out.push(`- ${p.persona} ${failedLine(p)}: ${f.expected} — ${codeSpan(f.lastDetail)}${other}`);
+    out.push(`- ${p.persona} ${failedLine(p)}: ${mdText(f.expected)} — ${codeSpan(f.lastDetail)}${other}`);
   }
   return out;
 }

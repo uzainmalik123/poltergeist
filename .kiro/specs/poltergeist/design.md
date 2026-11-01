@@ -31,7 +31,7 @@
 packages/
   core/       spec, config, safety, scout, personas, compiler, runner, verdicts, report, events
   costume/    glyph renderer (Bayer → glyph ramp), sprites, wordmark, palette tokens (F26)
-  cli/        `poltergeist` binary: summon, init, replay, export
+  cli/        `poltergeist` binary: summon (F09), init, replay, export; thin over core's `summon()`
   mcp/        MCP stdio server over core
   seance/     Vite + React dashboard (live + replay)
 integrations/kiro/   templates installed INTO target projects: hook, steering, MCP snippet, Power
@@ -149,15 +149,17 @@ Sprites are defined in `@poltergeist/costume` (`docs/THEME.md` §4).
 
 `run.started` · `scout.route` · `plan.compiled` · `rep.started {rep}` · `reset.finished {rep, ok, durationMs, error?}` · `ghost.spawned` · `ghost.step {ghostId, step, x?, y?}` · `ghost.frame {ghostId, jpegBase64}` (≤ 4 fps per ghost) · `guard.blocked {ghostId, reason, url}` · `assert.result` · `rep.finished {rep, outcomes}` · `verdict.pair` · `verdict.criterion` · `run.finished`. Every event carries `t` (epoch ms).
 
-The runner (F06) emits the `rep.*`, `reset.*`, `ghost.*`, `guard.*` and `assert.*` events through `runPlans(browser, loaded, plans, { sessions, outDir?, reps?, seed?, frameFps?, concurrency?, signal?, onEvent? })` (`packages/core/src/runner/`, D-33); the orchestrator (F09) owns `run.*`, `scout.*` and `plan.*` and the WebSocket. `ghostId` is `<criterion>__<persona>__r<rep>__<actor>`. Verdicts (F07) come from the pure `computeVerdicts(pairs, runResult)` → `{ reps, threshold, pairs, criteria, counts }` (`packages/core/src/verdicts/`, D-34); F09 emits `verdict.pair` and `verdict.criterion` from it and writes it as `verdicts.json`. Every event except frames is appended to `events.ndjson`. Frames are sampled to disk for replay. The Séance turns frames into glyphs client-side (F26); the run folder keeps real JPEGs.
+The runner (F06) emits the `rep.*`, `reset.*`, `ghost.*`, `guard.*` and `assert.*` events through `runPlans(browser, loaded, plans, { sessions, outDir?, reps?, seed?, frameFps?, concurrency?, signal?, onEvent? })` (`packages/core/src/runner/`, D-33); the orchestrator (F09) owns `run.*`, `scout.*` and `plan.*` and the WebSocket. Core's `summon(opts)` (`packages/core/src/summon/`, D-36) emits them as `SummonEvent`s through the same event sink, so they share `events.ndjson`: `run.started {runId, specDir, target, criteria, personas, reps}`, `scout.route {path, identity, status}`, `plan.compiled {criterion, persona, status, cached}`, `verdict.pair {criterion, persona, verdict, reason}`, `verdict.criterion {criterion, verdict}`, `run.finished {runId, counts, haunted, durationMs}`. With `--seance`, the CLI serves them on `ws://127.0.0.1:6660/runs/<runId>` and replays the non-frame events to clients that join late. `ghostId` is `<criterion>__<persona>__r<rep>__<actor>`. Verdicts (F07) come from the pure `computeVerdicts(pairs, runResult)` → `{ reps, threshold, pairs, criteria, counts }` (`packages/core/src/verdicts/`, D-34); F09 emits `verdict.pair` and `verdict.criterion` from it and writes it as `verdicts.json`. Every event except frames is appended to `events.ndjson`. Frames are sampled to disk for replay. The Séance turns frames into glyphs client-side (F26); the run folder keeps real JPEGs.
 
 ## 9. Run folder
+
+`.poltergeist/` sits next to the config file. `runId` is `YYYYMMDD-HHMMSS-xxxx` (UTC).
 
 ```
 .poltergeist/
   cache/plans/<cacheKey>.json
   runs/<runId>/
-    run.json            config snapshot (raw env:NAME, never secrets), spec hash, scoutHash, model, timings
+    run.json            runId, specDir, specHash (sha256 of requirements.md), config snapshot (raw env:NAME, never secrets), model, options, startedAt; then scoutHash, counts, finishedAt, durationMs
     scout/<slug>.json   "/" → index, "/trade/new" → trade__new
     plans/<criterion>__<persona>.json
     events.ndjson

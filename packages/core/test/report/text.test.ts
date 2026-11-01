@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Assertion, Step } from '../../src/compiler/dsl.js';
 import { DRAFT_WORDMARK, VERDICT_GLYPHS } from '../../src/report/glyphs.js';
 import { ReportJsonSchema } from '../../src/report/schema.js';
-import { codeSpan, describeAssertion, describeStep, describeTarget, oneLine } from '../../src/report/text.js';
+import { codeSpan, describeAssertion, describeStep, describeTarget, mdText, oneLine } from '../../src/report/text.js';
 
 describe('oneLine', () => {
   it('collapses newlines, line separators and runs of whitespace', () => {
@@ -14,6 +14,22 @@ describe('oneLine', () => {
     expect(s.endsWith('…')).toBe(true);
   });
   it('takes a custom cap', () => expect(oneLine('abcdef', 4)).toBe('abc…'));
+  it('escapes bidi and invisible characters as \\uXXXX text (KI-41)', () => {
+    const s = oneLine('a\u202Eb\u200Bc\u2066d\uFEFFe\u00ADf');
+    expect(s).toBe('a\\u202Eb\\u200Bc\\u2066d\\uFEFFe\\u00ADf');
+    expect(s).not.toMatch(/[\u202E\u200B\u2066\uFEFF\u00AD]/);
+  });
+  it('escapes remaining control characters', () => expect(oneLine('a\u0007b\u009Bc')).toBe('a\\u0007b\\u009Bc'));
+  it('treats non-breaking spaces as whitespace', () => expect(oneLine('a\u00A0b\u202Fc')).toBe('a b c'));
+});
+
+describe('mdText', () => {
+  it('escapes markdown and HTML punctuation (KI-41)', () => {
+    expect(mdText('<!-- x [y](z) *w* _v_ #')).toBe('\\<!-- x \\[y\\](z) \\*w\\* \\_v\\_ \\#');
+  });
+  it('escapes backslashes, backticks and pipes', () => expect(mdText('a\\b `c` |')).toBe('a\\\\b \\`c\\` \\|'));
+  it('flattens first', () => expect(mdText('a\nb')).toBe('a b'));
+  it('escapes & so HTML entities like &#x202E; stay literal (F09 review)', () => expect(mdText('a &#x202E; b')).toBe('a \\&\\#x202E; b'));
 });
 
 describe('codeSpan', () => {
@@ -22,6 +38,7 @@ describe('codeSpan', () => {
   it('pads when the text starts or ends with a backtick', () => expect(codeSpan('`a')).toBe('`` `a ``'));
   it('flattens newlines first', () => expect(codeSpan('a\nb')).toBe('`a b`'));
   it('never yields an empty span', () => expect(codeSpan('')).toBe('` `'));
+  it('escapes bidi characters inside the span', () => expect(codeSpan('\u202E')).toBe('`\\u202E`'));
 });
 
 describe('describeTarget', () => {

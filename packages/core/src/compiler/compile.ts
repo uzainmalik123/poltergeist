@@ -27,6 +27,12 @@ export type CompileOptions = {
   /** 1…4, default 4. */
   concurrency?: number;
   onPlan?: (result: PairResult) => void;
+  /** Skip cache reads (`--recompile`); results are still written to the cache. */
+  recompile?: boolean;
+  /** A failed cache or plan-file write is reported here and never rejects `compile()` (KI-35). */
+  onWarning?: (message: string) => void;
+  /** Aborting stops queued pairs before their LLM call and cancels calls in flight; `compile()` rejects with the reason. */
+  signal?: AbortSignal;
 };
 
 type Attempts = 0 | 1 | 2;
@@ -86,7 +92,18 @@ export async function compile(
   if (!Number.isInteger(concurrency) || concurrency < 1 || concurrency > MAX_LLM_CONCURRENCY) {
     throw new RangeError(`concurrency must be an integer 1…${MAX_LLM_CONCURRENCY}, got ${concurrency}`);
   }
-  const personas = (opts.personas ?? PERSONA_IDS).map((id) => getPersona(id));
+  const ids = opts.personas ?? PERSONA_IDS;
+  const dup = ids.find((id, i) => ids.indexOf(id) !== i);
+  if (dup !== undefined) throw new RangeError(`duplicate persona id: ${dup}`);
+  const personas = ids.map((id) => getPersona(id));
+  const warn = (message: string) => {
+    try {
+      opts.onWarning?.(message);
+    } catch {
+      // A broken listener must not lose paid results.
+    }
+  };
+  const errText = (err: unknown) => (err instanceof Error ? err.message : String(err));
   const hashes = new Map(personas.map((p) => [p.id, personaHash(p)]));
   const limit = createLimiter(concurrency);
   let llmCalls = 0;
@@ -94,11 +111,13 @@ export async function compile(
   /** Set on the first CompilerError: queued pairs stop before calling, writing or reporting. */
   let aborted = false;
   const stopIfAborted = () => {
+    opts.signal?.throwIfAborted();
     if (aborted) throw new CompilerError('Compile aborted after an earlier error.');
   };
 
   const compilePair = async (criterion: Criterion, persona: Persona): Promise<PairResult> => {
     const base = { criterion: criterion.id, persona: persona.id };
+    stopIfAborted();
     const routes = pickRoutes(criterion, scout.routes);
     if (routes.length === 0) return { status: 'uncompilable', ...base, reason: 'no matching route', errors: [], attempts: 0 };
 
@@ -110,7 +129,7 @@ export async function compile(
       model: opts.model,
       promptVersion: PROMPT_VERSION,
     });
-    const hit = await readCache(opts.cacheDir, key);
+    const hit = opts.recompile ? undefined : await readCache(opts.cacheDir, key);
     if (hit) {
       cacheHits++;
       return fromCached(criterion.id, persona.id, hit, true, 0);
@@ -124,13 +143,14 @@ export async function compile(
         response = await limit(() => {
           stopIfAborted();
           llmCalls++;
-          return opts.client.complete({ model: opts.model, system: SYSTEM_PROMPT, turns: [...turns], meta: { ...base, attempt } });
+          return opts.client.complete({ model: opts.model, system: SYSTEM_PROMPT, turns: [...turns], meta: { ...base, attempt }, ...(opts.signal ? { signal: opts.signal } : {}) });
         });
       } catch (err) {
         if (err instanceof CompilerError) {
           aborted = true;
           throw err;
         }
+        if (opts.signal?.aborted) throw opts.signal.reason;
         const message = err instanceof Error ? err.message : String(err);
         return { status: 'uncompilable', ...base, reason: `llm error: ${message}`, errors: [], attempts: attempt };
       }
@@ -140,7 +160,7 @@ export async function compile(
       stopIfAborted();
       const checked = check(response.text, response.stopReason, criterion, persona, routes);
       if ('ok' in checked) {
-        await writeCache(opts.cacheDir, key, checked.ok);
+        await writeCache(opts.cacheDir, key, checked.ok).catch((err: unknown) => warn(`cache write failed: ${errText(err)}`));
         return fromCached(criterion.id, persona.id, checked.ok, false, attempt);
       }
       errors = checked.errors;
@@ -149,8 +169,14 @@ export async function compile(
     return { status: 'uncompilable', ...base, reason: 'invalid plan after retry', errors, attempts: 2 };
   };
 
-  const plansDir = opts.outDir === undefined ? undefined : join(opts.outDir, 'plans');
-  if (plansDir) await mkdir(plansDir, { recursive: true });
+  let plansDir = opts.outDir === undefined ? undefined : join(opts.outDir, 'plans');
+  if (plansDir) {
+    const dir = plansDir;
+    await mkdir(dir, { recursive: true }).catch((err: unknown) => {
+      warn(`plan write failed: ${dir}: ${errText(err)}`);
+      plansDir = undefined;
+    });
+  }
 
   const pairs = await Promise.all(
     criteria.flatMap((criterion) =>
@@ -158,7 +184,8 @@ export async function compile(
         const result = await compilePair(criterion, persona);
         stopIfAborted();
         if (plansDir) {
-          await writeFile(join(plansDir, `${result.criterion}__${result.persona}.json`), JSON.stringify(result, null, 2) + '\n');
+          const file = join(plansDir, `${result.criterion}__${result.persona}.json`);
+          await writeFile(file, JSON.stringify(result, null, 2) + '\n').catch((err: unknown) => warn(`plan write failed: ${file}: ${errText(err)}`));
         }
         opts.onPlan?.(result);
         return result;
