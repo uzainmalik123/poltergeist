@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { readFile, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
-import { chromium } from 'playwright-core';
+import { chromium, type LaunchOptions } from 'playwright-core';
 import { compile } from '../compiler/compile.js';
 import type { HauntingPlan } from '../compiler/dsl.js';
 import { createAnthropicClient } from '../compiler/llm.js';
@@ -18,6 +18,14 @@ import { computeVerdicts } from '../verdicts/compute.js';
 import { UsageError } from './errors.js';
 import { newRunId } from './run-id.js';
 import type { SummonEvent, SummonOptions, SummonResult } from './types.js';
+
+/**
+ * Guarded launch options with Playwright's own SIGINT handler off: it would close the browser and
+ * `process.exit(130)` itself, skipping the caller's abort path, cleanup and final event flush.
+ */
+export function summonLaunchOptions(): LaunchOptions {
+  return guardLaunchOptions({ handleSIGINT: false });
+}
 
 const json = (value: unknown) => JSON.stringify(value, null, 2) + '\n';
 
@@ -71,7 +79,7 @@ export async function summon(opts: SummonOptions): Promise<SummonResult> {
   await sink.flush();
   await writeFile(join(runDir, 'run.json'), json(runJson));
 
-  const launch = opts.launch ?? (() => chromium.launch(guardLaunchOptions()));
+  const launch = opts.launch ?? (() => chromium.launch(summonLaunchOptions()));
   const signal = opts.signal;
   let resetError: string | undefined;
   const browser = await launch();
@@ -80,6 +88,7 @@ export async function summon(opts: SummonOptions): Promise<SummonResult> {
     signal?.throwIfAborted();
     scouted = await scout(browser, loaded, {
       outDir: runDir,
+      signal,
       onRoute: (r) => sink.emit({ type: 'scout.route', path: r.path, identity: r.identity, status: r.status }),
     });
     signal?.throwIfAborted();
@@ -90,6 +99,7 @@ export async function summon(opts: SummonOptions): Promise<SummonResult> {
       outDir: runDir,
       personas,
       recompile: opts.recompile,
+      signal,
       onWarning: warn,
       onPlan: (p) => sink.emit({ type: 'plan.compiled', criterion: p.criterion, persona: p.persona, status: p.status, cached: p.status !== 'uncompilable' && p.cached }),
     });

@@ -17,9 +17,9 @@ export function oneLine(s: string, max = MAX): string {
   return flat.length <= max ? flat : `${flat.slice(0, max - 1)}…`;
 }
 
-/** `oneLine`, then escaped for markdown prose outside code spans: no HTML, links, emphasis or headings (KI-41). */
+/** `oneLine`, then escaped for markdown prose outside code spans: no HTML, entities, links, emphasis or headings (KI-41). */
 export function mdText(s: string, max = MAX): string {
-  return oneLine(s, max).replace(/[\\`*_[\]<>#|]/g, '\\$&');
+  return oneLine(s, max).replace(/[\\`*_[\]<>#|&]/g, '\\$&');
 }
 
 /** A markdown code span that survives backticks inside it (CommonMark: the fence outlasts any run). */

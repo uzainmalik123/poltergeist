@@ -29,6 +29,7 @@ describe('mdText', () => {
   });
   it('escapes backslashes, backticks and pipes', () => expect(mdText('a\\b `c` |')).toBe('a\\\\b \\`c\\` \\|'));
   it('flattens first', () => expect(mdText('a\nb')).toBe('a b'));
+  it('escapes & so HTML entities like &#x202E; stay literal (F09 review)', () => expect(mdText('a &#x202E; b')).toBe('a \\&\\#x202E; b'));
 });
 
 describe('codeSpan', () => {

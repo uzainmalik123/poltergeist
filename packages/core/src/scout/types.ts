@@ -41,6 +41,8 @@ export type ScoutOptions = {
   /** Called in visit order (anonymous first, then accounts). */
   onRoute?: (route: RouteScout) => void;
   onBlocked?: (blocked: BlockedRequest) => void;
+  /** Checked before each identity and route; scouting rejects with the reason. */
+  signal?: AbortSignal;
 };
 
 export type ScoutResult = {

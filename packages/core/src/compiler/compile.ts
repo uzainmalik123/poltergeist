@@ -31,6 +31,8 @@ export type CompileOptions = {
   recompile?: boolean;
   /** A failed cache or plan-file write is reported here and never rejects `compile()` (KI-35). */
   onWarning?: (message: string) => void;
+  /** Aborting stops queued pairs before their LLM call and cancels calls in flight; `compile()` rejects with the reason. */
+  signal?: AbortSignal;
 };
 
 type Attempts = 0 | 1 | 2;
@@ -109,11 +111,13 @@ export async function compile(
   /** Set on the first CompilerError: queued pairs stop before calling, writing or reporting. */
   let aborted = false;
   const stopIfAborted = () => {
+    opts.signal?.throwIfAborted();
     if (aborted) throw new CompilerError('Compile aborted after an earlier error.');
   };
 
   const compilePair = async (criterion: Criterion, persona: Persona): Promise<PairResult> => {
     const base = { criterion: criterion.id, persona: persona.id };
+    stopIfAborted();
     const routes = pickRoutes(criterion, scout.routes);
     if (routes.length === 0) return { status: 'uncompilable', ...base, reason: 'no matching route', errors: [], attempts: 0 };
 
@@ -139,13 +143,14 @@ export async function compile(
         response = await limit(() => {
           stopIfAborted();
           llmCalls++;
-          return opts.client.complete({ model: opts.model, system: SYSTEM_PROMPT, turns: [...turns], meta: { ...base, attempt } });
+          return opts.client.complete({ model: opts.model, system: SYSTEM_PROMPT, turns: [...turns], meta: { ...base, attempt }, ...(opts.signal ? { signal: opts.signal } : {}) });
         });
       } catch (err) {
         if (err instanceof CompilerError) {
           aborted = true;
           throw err;
         }
+        if (opts.signal?.aborted) throw opts.signal.reason;
         const message = err instanceof Error ? err.message : String(err);
         return { status: 'uncompilable', ...base, reason: `llm error: ${message}`, errors: [], attempts: attempt };
       }

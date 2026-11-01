@@ -278,3 +278,24 @@ describe('compile: options for summon (F09, KI-35)', () => {
     expect(warnings.some((w) => /^plan write failed:/.test(w))).toBe(true);
   });
 });
+
+describe('compile: abort (F09 review)', () => {
+  it('makes no more LLM calls once the signal aborts, and passes the signal to the client', async () => {
+    const ac = new AbortController();
+    const fake = fakeLlm((req) => {
+      ac.abort(new Error('stop')); // Ctrl-C while the first call is in flight
+      return output(VALID[req.meta.persona]);
+    });
+    const other = criterion('3.3', 'WHEN a trader claims Sour Skulls, THE Market SHALL show the claim.');
+    const p = run(fake, [CLAIM, other], { personas: ['wraith'], concurrency: 1, signal: ac.signal });
+    await expect(p).rejects.toThrow('stop');
+    expect(fake.calls).toHaveLength(1);
+    expect(fake.calls[0]!.signal).toBe(ac.signal);
+  });
+
+  it('rejects at once when already aborted', async () => {
+    const fake = valid();
+    await expect(run(fake, [CLAIM], { personas: ['wraith'], signal: AbortSignal.abort(new Error('early')) })).rejects.toThrow('early');
+    expect(fake.calls).toHaveLength(0);
+  });
+});

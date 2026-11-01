@@ -64,6 +64,7 @@ export async function scout(browser: Browser, loaded: LoadedConfig, opts: ScoutO
   });
 
   for (const identity of identities) {
+    opts.signal?.throwIfAborted();
     let blocked: BlockedRequest[] = [];
     const context = await newGuardedContext(browser, {
       allowedHosts: loaded.allowedHosts,
@@ -85,6 +86,7 @@ export async function scout(browser: Browser, loaded: LoadedConfig, opts: ScoutO
       }
       for (const [i, route] of config.routes.entries()) {
         if (identityOf(route.auth) !== identity) continue;
+        opts.signal?.throwIfAborted();
         blocked = [];
         let outcome: Outcome;
         if (!account && identity !== ANONYMOUS) outcome = skip(`account "${identity}" is not usable`);

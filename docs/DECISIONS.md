@@ -455,5 +455,11 @@
   - `oneLine` now makes controls, bidi controls and invisible characters visible as `\uXXXX` everywhere (report and terminal), and a new `mdText` escapes markdown outside code spans.
   - The terminal shows one line per scouted route and one per rep. Without colour there are no per-step lines. On a colour TTY, `LiveBlock.log` prints phase lines above the live ghost block.
   - The event server closes clients gracefully (code 1001), so `run.finished` reaches them.
+- **Review fixes (2026-11-01):**
+  - Chromium launches with `summonLaunchOptions()` (guarded, `handleSIGINT: false`), so Ctrl-C goes through the CLI's abort path instead of Playwright's `process.exit(130)`.
+  - `compile()` and `scout()` take a `signal`: no LLM call starts after an abort, calls in flight are cancelled (`LlmRequest.signal` goes to the SDK), and scouting stops before the next identity or route.
+  - The `--seance` server accepts browser clients only from loopback origins (`localhost`, `127.0.0.1`, `[::1]`); clients with no `Origin` are allowed.
+  - `mdText` also escapes `&`, so HTML entities stay literal.
+  - Deferred minors are in KI-43.
 - **Consequences:** F11 and F12 call core's `summon()`. F14 adds the `--only` diff on top of `verdicts.json`. F26 replaces the CLI's draft wordmark and initials.
 

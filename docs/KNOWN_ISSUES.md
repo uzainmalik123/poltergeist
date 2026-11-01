@@ -51,6 +51,7 @@
 | KI-40 | The report uses core's draft wordmark and glyph table until F26 ships `@poltergeist/costume` | Minor | F26, F09 | Open |
 | KI-41 | F08 review minors: markdown/HTML in criterion text and plan strings outside code spans, bidi/invisible characters pass `oneLine`, flaky pairs under a haunted criterion hidden in markdown, orphan `.tmp` after a kill, non-atomic pair of files, long wordmark override, Windows cross-drive paths | Minor | F11 | Open (injection and bidi fixed 2026-11-01, F09) |
 | KI-42 | F09 Done-when (`npm ci && npx playwright-core install chromium && npm run summon` on Candy Swap from a clean clone) not yet run: built against a fixture (D-36) | Major | F09 sign-off | Open |
+| KI-43 | F09 review minors: more invisible characters (U+034F, U+115F, U+3164, tag characters…), live block garbles on wrap or short terminals, abort not re-checked during verdicts/report, API key read late and from `process.env`, no frame backpressure for slow `--seance` clients, no CLI test aborting mid-compile or mid-rep | Minor | F12, F11 | Open |
 
 ---
 
@@ -455,4 +456,14 @@
 ### KI-42: F09 Done-when not yet run on real Candy Swap · Major · Open
 - **Problem:** F09 was built against the claims fixture with a fake LLM (D-36), because F10 doesn't exist. PRD F09's Done-when is a full Candy Swap run from a clean clone with `npm ci && npx playwright-core install chromium && npm run summon`.
 - **Next action:** once F10 exists, start Candy Swap, run that sequence with a real key (`doppler run -- npm run summon`), and check the exit code, the board and the report. This is the same run as the KI-34/KI-36 checks.
+
+### KI-43: F09 review minors · Minor · Open
+- **Context:** the final review of F09 (2026-11-01). Its Important findings were fixed before merge (D-36 review fixes): Playwright's own SIGINT handler, compile and scout ignoring Ctrl-C, `--seance` accepting any browser origin, and `&#x202E;`-style entities passing `mdText`. A client `error` listener and a 1 KB `maxPayload` were added to the event server along with the origin check.
+- **Invisibles:** `HIDDEN` in `report/text.ts` misses U+034F, U+115F, U+1160, U+180E, U+2061–U+2064, U+3164, U+FFA0, U+FFF9–U+FFFB and the tag characters U+E0000–U+E007F. None of them reorder text.
+- **Live block:** `LiveBlock` moves up by line count, so a ghost line wider than the terminal, or a block taller than it, garbles the redraw. Clip ghost lines to `columns - 1` and cap the block at the terminal's height.
+- **Late abort:** `summon()` doesn't re-check the signal while writing verdicts and the report, so a Ctrl-C there exits 0/1 with a complete report instead of 130.
+- **Credentials:** `createAnthropicClient()` reads `process.env`, not `opts.env`, and a missing key surfaces only after launching and scouting. Check up front when the cache isn't warm, or pass the env through.
+- **Backpressure:** the event server sends base64 frames to every client without looking at `bufferedAmount`. Drop frames for slow clients (F12).
+- **Tests:** no CLI-level test aborts mid-compile or mid-rep (core's tests cover the abort paths).
+- **Next action:** clip the live block with the next CLI change. Do backpressure with F12, credentials with F11 (MCP also calls `summon()`).
 

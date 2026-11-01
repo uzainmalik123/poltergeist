@@ -14,7 +14,8 @@ export function fakeLlm(responder: (req: LlmRequest) => LlmResponse | Promise<Ll
     },
     client: {
       async complete(req) {
-        calls.push(structuredClone(req));
+        const { signal, ...rest } = req; // an AbortSignal can't be structured-cloned
+        calls.push({ ...structuredClone(rest), ...(signal ? { signal } : {}) });
         inFlight++;
         maxInFlight = Math.max(maxInFlight, inFlight);
         try {

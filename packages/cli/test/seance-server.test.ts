@@ -15,9 +15,9 @@ async function start(runId = 'r1', port = 0) {
 }
 
 /** Connects and collects messages until `count` arrive. */
-function collect(url: string, count: number): Promise<{ ws: WebSocket; messages: Promise<SummonEvent[]> }> {
+function collect(url: string, count: number, origin?: string): Promise<{ ws: WebSocket; messages: Promise<SummonEvent[]> }> {
   return new Promise((resolve, reject) => {
-    const ws = new WebSocket(url);
+    const ws = new WebSocket(url, origin ? { origin } : {});
     const got: SummonEvent[] = [];
     let done!: (v: SummonEvent[]) => void;
     const messages = new Promise<SummonEvent[]>((r) => (done = r));
@@ -60,6 +60,17 @@ describe('startEventServer', () => {
   it('refuses other paths', async () => {
     const s = await start('r1');
     await expect(collect(s.url.replace('/runs/r1', '/runs/other'), 1)).rejects.toThrow();
+  });
+
+  it('refuses browser pages from other origins (F09 review)', async () => {
+    const s = await start();
+    await expect(collect(s.url, 1, 'https://evil.example')).rejects.toThrow(/Unexpected server response: 40[13]/);
+  });
+
+  it.each(['http://localhost:6661', 'http://127.0.0.1:6661', 'http://[::1]:5173'])('accepts the loopback origin %s', async (origin) => {
+    const s = await start();
+    const c = await collect(s.url, 1, origin);
+    c.ws.close();
   });
 
   it('says the port is in use', async () => {

@@ -38,7 +38,7 @@ export type SummonOptions = {
   runId?: string;
   /** Default `createAnthropicClient()`. */
   llm?: LlmClient;
-  /** Default `chromium.launch(guardLaunchOptions())`. */
+  /** Default `chromium.launch(summonLaunchOptions())`: guarded, with Playwright's SIGINT handler off. */
   launch?: () => Promise<Browser>;
   signal?: AbortSignal;
   onEvent?: (e: SummonEvent) => void;
