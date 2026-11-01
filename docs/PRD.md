@@ -19,7 +19,7 @@
 | 0 | n/a | Scaffold: monorepo, health gate, CI (D-19) | High | Done | n/a |
 | 1 | F01 | Spec Reader | High | Done | 0 |
 | 2 | F02 | Target Config & Safety Allowlist | High | Done | 0 |
-| 3 | F10 | Candy Swap Demo Target (built in Kiro) | High | TBD | F01 (to check its spec) |
+| 3 | F10 | Candy Swap Demo Target (built in Kiro) | High | Prep done (D-37); Kiro build pending (KI-44) | F01 (to check its spec) |
 | 4 | F03 | Route Scout | High | Done (fixture; real Candy Swap check pending, KI-30) | F02, F10 |
 | 5 | F04 | Core Personas & Input Generators | High | Done | n/a |
 | 6 | n/a | **KI-01 spike** (compile + run 5 criteria × 3 personas) | High | TBD | F01, F03, F04 |
@@ -124,7 +124,9 @@
   - concurrency 25 is rejected;
   - the guard tests pass 5 of 5 times pinned to one CPU (`taskset -c 0`; LESSONS § KI-23).
 
-### F10: Candy Swap Demo Target · High · TBD
+### F10: Candy Swap Demo Target · High · Prep done; Kiro build pending
+
+> 2026-11-01: prep kit only, because Kiro builds the app itself (D-37). Plan `docs/plans/2026-11-01-F10-candy-swap-prep.md`. Kiro brief `docs/plans/2026-11-01-F10-kiro-brief.md`, `fixtures/candy-swap/poltergeist.config.json`, and `npm run candy:check`, which runs this Done-when and today exits 1 with "not built yet". **Still to do:** build it in Kiro from the brief (KI-44).
 
 **Owns:** `fixtures/candy-swap/`, a small Halloween candy-trading web app (login, market, claim candy, propose a trade, inventory). It also owns the app's seed and reset scripts and **its own `.kiro/specs/candy-swap/`**, generated and built **in Kiro**.
 **Not this feature:** anything in Poltergeist itself.
@@ -137,7 +139,7 @@
   - Server-side rendered, minimal JS. SQLite, with `db:reset` in < 1 s.
   - 6–8 requirements, ~25 criteria.
   - It may use the costume palette but doesn't need to.
-- **Done when:** the app runs, reset is deterministic, and F01 parses its spec with zero warnings (or each warning becomes a KI-16 note).
+- **Done when:** the app runs, reset is deterministic, and F01 parses its spec with zero warnings (or each warning becomes a KI-16 note). `npm run candy:check` checks all of this except "the app runs" (D-37).
 
 ### F03: Route Scout · High · Done (fixture)
 
@@ -469,3 +471,4 @@ Implements Requirement 12.
 - 2026-10-31: **F04 Done** (D-31). Three core personas, eight deterministic generators (adds `plain`), vendored BLNS without injection sections. KI-32 opened (typed inputs).
 - 2026-11-01: **F08 Done against a fixture** (D-35). The report has a board, fix-ready haunted tasks, a 300-line cap that keeps the first task, and a versioned JSON schema. The Kiro and real Candy Swap check is KI-38. Opened KI-39 (timeouts never haunted), KI-40 (draft wordmark until F26) and KI-41 (review minors).
 - 2026-11-01: **F09 Done against a fixture** (D-36). Core `summon()` plus a thin `@poltergeist/cli`: flags, themed board, live ghost block on a colour TTY, exit codes 0/1/2/130, `--seance` loopback event server with replay. Fixed KI-41 (report injection, bidi) and KI-35 (best-effort writes, duplicate personas). The real Candy Swap check is KI-42.
+- 2026-11-01: **F10 prep done** (D-37). Kiro brief, Candy Swap's `poltergeist.config.json`, `npm run candy:check` (F10's Done-when) and a skipped real-spec F01 test. The app itself is built in Kiro (KI-44). Candy Swap is a standalone package, not a root workspace.

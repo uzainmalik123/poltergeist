@@ -9,7 +9,7 @@ Work happens one PRD feature at a time, through the grill → plan → implement
   - _Requirements: 1.1–1.8_
 - [x] 2. F02 Target Config & Safety
   - _Requirements: 2.1–2.8_
-- [ ] 3. F10 Candy Swap Demo Target (built in Kiro from its own spec)
+- [ ] 3. F10 Candy Swap Demo Target (built in Kiro from its own spec; prep kit done, D-37: brief, config, `npm run candy:check`; Kiro build pending, KI-44)
   - _Requirements: none in this spec (it has its own)_
 - [x] 4. F03 Route Scout (built against a Candy-shaped fixture, D-30; rerun against Candy Swap when F10 lands, KI-30)
   - _Requirements: 3.1–3.7_

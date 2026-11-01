@@ -7,7 +7,7 @@
 | Layer | Choice | Why |
 |---|---|---|
 | Language / runtime | **TypeScript 5.9 on Node ≥ 22**, ESM | Same as Reanimator. Playwright and the MCP SDK are TypeScript-first |
-| Repo | **npm workspaces** monorepo (`packages/*`, `fixtures/*`) | One engine, several front doors (CLI, MCP, Séance), one shared costume |
+| Repo | **npm workspaces** monorepo (`packages/*`). Candy Swap in `fixtures/candy-swap` is standalone (`npm --prefix`, D-37) | One engine, several front doors (CLI, MCP, Séance), one shared costume |
 | Dev tooling | `tsx`, `vitest`, `eslint` + `typescript-eslint` | Same as Reanimator |
 | Health gate | `npm run health` = typecheck + lint + tests, also run in CI (D-19) | One definition of "green" |
 | Browser automation | **`playwright-core`** + Chromium (`npx playwright-core install chromium`) | Isolated contexts per actor, `page.route` for holding requests, a per-context proxy for the guard, CDP for throttling and frames, traces |
@@ -95,6 +95,7 @@ The prototype (2026-10-30) installed and verified these versions. Reuse them unl
 npm ci
 npx playwright-core install chromium
 npm run health
+npm --prefix fixtures/candy-swap install && npm run candy:check   # F10 Done-when (D-37)
 npm run --prefix fixtures/candy-swap db:reset && npm run --prefix fixtures/candy-swap dev   # :4000
 doppler run -- npm run summon -- --spec fixtures/candy-swap/.kiro/specs/candy-swap --seance
 ```

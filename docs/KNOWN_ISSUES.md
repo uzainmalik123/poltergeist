@@ -52,6 +52,7 @@
 | KI-41 | F08 review minors: markdown/HTML in criterion text and plan strings outside code spans, bidi/invisible characters pass `oneLine`, flaky pairs under a haunted criterion hidden in markdown, orphan `.tmp` after a kill, non-atomic pair of files, long wordmark override, Windows cross-drive paths | Minor | F11 | Open (injection and bidi fixed 2026-11-01, F09) |
 | KI-42 | F09 Done-when (`npm ci && npx playwright-core install chromium && npm run summon` on Candy Swap from a clean clone) not yet run: built against a fixture (D-36) | Major | F09 sign-off | Open |
 | KI-43 | F09 review minors: more invisible characters (U+034F, U+115F, U+3164, tag characters…), live block garbles on wrap or short terminals, abort not re-checked during verdicts/report, API key read late and from `process.env`, no frame backpressure for slow `--seance` clients, no CLI test aborting mid-compile or mid-rep | Minor | F12, F11 | Open |
+| KI-44 | Candy Swap not yet built in Kiro: only the F10 prep kit exists (D-37) | Major | F10, KI-30/34/36/38/42, demo | Open |
 
 ---
 
@@ -195,6 +196,7 @@
   - In fallback mode (no `Requirement N` headings), a requirement can be titled "Acceptance Criteria".
   - Inline HTML (`<br>`) is kept verbatim in the criterion text.
   - Test nits: `read.test.ts` leaves a temp folder behind; the perf test is wall-clock.
+- **Notes (2026-11-01, F10 prep, D-37):** once Kiro writes `fixtures/candy-swap/.kiro/specs/candy-swap/`, the skipped test in `packages/core/test/spec/fixtures.test.ts` runs on it and `npm run candy:check` lists every F01 warning code. Log each one here.
 - **Notes (2026-10-31, F01 rebuild grill):** all the deferred minors above are ruled on in D-27. The issue stays open until a real Kiro-generated spec (Candy Swap, F10) is added as a fixture.
 
 
@@ -343,6 +345,7 @@
 - **Risk:** the real Kiro-built app may use markup the login heuristic or the capture rules don't expect (unlabelled inputs, icon buttons, client-side login).
 - **Next action:** when F10 lands, run `scout()` against `http://localhost:4000` with Candy Swap's config. Check that the "Claim" buttons and the trade-form fields are listed by role and name, and that every emitted label and testId resolves. Add an integration test if it can run in CI.
 
+- **Notes (2026-11-01, F10 prep):** blocked on KI-44. `npm run candy:check` prints this check as a next step once F10's Done-when passes.
 ### KI-31: F03 rebuild review minors · Minor · Open
 - **Context:** the final review of the F03 rebuild (2026-10-31). Its Critical and Important findings were fixed before merge: a secret in a testId element's name, JSON-escaped secrets in snapshots, login forms rendered after load, a spinner taken for in-place login success, and a path under two identities overwriting its file (D-30).
 - **Capture:**
@@ -466,4 +469,10 @@
 - **Backpressure:** the event server sends base64 frames to every client without looking at `bufferedAmount`. Drop frames for slow clients (F12).
 - **Tests:** no CLI-level test aborts mid-compile or mid-rep (core's tests cover the abort paths).
 - **Next action:** clip the live block with the next CLI change. Do backpressure with F12, credentials with F11 (MCP also calls `summon()`).
+
+### KI-44: Candy Swap not yet built in Kiro · Major · Open
+- **Context:** F10 has to be generated and built in Kiro (D-10), and the F10 cycle on 2026-11-01 ran in Claude Code without Kiro. So it shipped only the prep kit (D-37): the brief, the Poltergeist config, `npm run candy:check` and a skipped spec test.
+- **Blocks:** F10's Done-when, and with it every real Candy Swap check (KI-30, KI-34, KI-36, KI-38, KI-42), the KI-01 spike and the demo.
+- **Next action:** a person on the team opens `fixtures/candy-swap/` in Kiro, pastes the prompt from `docs/plans/2026-11-01-F10-kiro-brief.md`, lets Kiro run spec → implement, commits the output as is, then runs `npm --prefix fixtures/candy-swap install && npm run candy:check`.
+- **Risk:** Kiro may pick other URLs or skip `db:dump`. Change our config, or ask Kiro for the missing script in a follow-up Kiro session. Never hand-edit the app.
 
