@@ -50,6 +50,7 @@
 | KI-39 | Timeouts are `inconclusive` (D-34), so slow-device breakage (Lich: hidden buttons, timeouts) can never be `haunted` | Minor | F16 | Open |
 | KI-40 | The report uses core's draft wordmark and glyph table until F26 ships `@poltergeist/costume` | Minor | F26, F09 | Open |
 | KI-41 | F08 review minors: markdown/HTML in criterion text and plan strings outside code spans, bidi/invisible characters pass `oneLine`, flaky pairs under a haunted criterion hidden in markdown, orphan `.tmp` after a kill, non-atomic pair of files, long wordmark override, Windows cross-drive paths | Minor | F09, F11 | Open |
+| KI-42 | F09 Done-when (`npm ci && npx playwright-core install chromium && npm run summon` on Candy Swap from a clean clone) not yet run: built against a fixture (D-36) | Major | F09 sign-off | Open |
 
 ---
 
@@ -431,7 +432,8 @@
 
 ### KI-40: The report's wordmark and glyphs are core drafts until F26 · Minor · Open
 - **Problem:** F26 owns the wordmark and verdict glyphs, but it isn't built. `report/` holds THEME §4's drafts as defaults (D-35).
-- **Next action:** when F26 lands, have F09 pass the Costume Kit's wordmark to `renderReport`, and either re-export the glyph table from `@poltergeist/costume` or keep them identical with a test.
+- **2026-11-01 (F09, D-36):** the CLI also uses the draft wordmark, glyphs and persona initials until F26.
+- **Next action:** when F26 lands, have F09 pass the Costume Kit's wordmark to `renderReport` and use its sprites in the terminal, and either re-export the glyph table from `@poltergeist/costume` or keep them identical with a test.
 
 ### KI-41: F07/F08 review minors · Minor · Open
 - **Context:** the final review of F08 (2026-11-01). Its Important findings were fixed before merge (D-35 review fixes): an oversized haunted section could be trimmed away, and short or erroring runs were shown as a plain "failed k/N". A third finding, about duplicate or out-of-range reps, belonged to the parallel F07 and is already handled by `main`'s `computeVerdicts`, which throws on both.
@@ -445,3 +447,8 @@
   - A `wordmark` override longer than ~290 lines is hard-cut.
   - On Windows, a `runDir` on another drive gives an absolute path.
 - **Next action:** fix the injection and bidi items before F09 writes real reports, and the rest with F09 or F11.
+
+### KI-42: F09 Done-when not yet run on real Candy Swap · Major · Open
+- **Problem:** F09 was built against the claims fixture with a fake LLM (D-36), because F10 doesn't exist. PRD F09's Done-when is a full Candy Swap run from a clean clone with `npm ci && npx playwright-core install chromium && npm run summon`.
+- **Next action:** once F10 exists, start Candy Swap, run that sequence with a real key (`doppler run -- npm run summon`), and check the exit code, the board and the report. This is the same run as the KI-34/KI-36 checks.
+
