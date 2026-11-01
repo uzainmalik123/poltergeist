@@ -1,0 +1,24 @@
+{
+  "name": "@poltergeist/cli",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "poltergeist": "./bin/poltergeist.js"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@poltergeist/core": "*",
+    "playwright-core": "1.64.1",
+    "tsx": "4.23.15",
+    "ws": "8.22.0"
+  },
+  "devDependencies": {
+    "@types/ws": "8.18.2"
+  }
+}

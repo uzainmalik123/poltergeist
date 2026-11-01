@@ -13,7 +13,8 @@
     "lint": "eslint .",
     "test": "vitest run",
     "health": "npm run typecheck && npm run lint && npm test",
-    "test:guard:1cpu": "taskset -c 0 vitest run packages/core/test/safety packages/core/test/config packages/core/test/scout"
+    "test:guard:1cpu": "taskset -c 0 vitest run packages/core/test/safety packages/core/test/config packages/core/test/scout",
+    "summon": "poltergeist summon --spec fixtures/candy-swap/.kiro/specs/candy-swap --config fixtures/candy-swap/poltergeist.config.json"
   },
   "devDependencies": {
     "@eslint/js": "9.39.1",
