@@ -36,7 +36,8 @@ export async function startEventServer(runId: string, opts: { port?: number; hos
       for (const client of wss.clients) if (client.readyState === WebSocket.OPEN) client.send(line);
     },
     close() {
-      for (const client of wss.clients) client.terminate();
+      // A graceful close flushes queued events (run.finished) before the socket goes.
+      for (const client of wss.clients) client.close(1001, 'run finished');
       return new Promise((resolve) => wss.close(() => resolve()));
     },
   };

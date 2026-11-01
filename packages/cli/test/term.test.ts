@@ -101,6 +101,14 @@ describe('LiveBlock', () => {
     block.clear();
     expect(out.endsWith('\x1b[1F\x1b[J')).toBe(true);
   });
+  it('prints a permanent line above the block and redraws the block below it', () => {
+    let out = '';
+    const block = new LiveBlock({ write: (s) => (out += s) }, 12);
+    block.update('g1', 'one');
+    block.log('rep 1/3 done');
+    expect(out.endsWith('\x1b[1F\x1b[Jrep 1/3 done\none\n')).toBe(true);
+  });
+
   it('shows at most maxLines ghosts', () => {
     let out = '';
     const block = new LiveBlock({ write: (s) => (out += s) }, 2);

@@ -27,6 +27,13 @@ export class LiveBlock {
     if (this.lines.delete(ghostId)) this.draw();
   }
 
+  /** A permanent line printed above the block; the block is redrawn under it. */
+  log(line: string): void {
+    const shown = this.shown();
+    this.out.write(`${this.up()}\x1b[J${line}\n${shown.map((l) => `${l}\n`).join('')}`);
+    this.drawn = shown.length;
+  }
+
   /** Erases the block, leaving the cursor where it started. */
   clear(): void {
     this.out.write(`${this.up()}\x1b[J`);
@@ -38,8 +45,12 @@ export class LiveBlock {
     return this.drawn > 0 ? `\x1b[${this.drawn}F` : '';
   }
 
+  private shown(): string[] {
+    return [...this.lines.values()].slice(-this.maxLines);
+  }
+
   private draw(): void {
-    const shown = [...this.lines.values()].slice(-this.maxLines);
+    const shown = this.shown();
     this.out.write(`${this.up()}\x1b[J${shown.map((l) => `${l}\n`).join('')}`);
     this.drawn = shown.length;
   }
