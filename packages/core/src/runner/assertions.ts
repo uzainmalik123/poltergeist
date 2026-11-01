@@ -36,6 +36,15 @@ const MAX_DETAIL = 200;
 
 class PlanFault extends Error {}
 
+/**
+ * Text assertions match case-sensitively on whole words (D-33): `Error` must not match "No errors", and
+ * `1 claimed` must not match "11 claimed". Playwright's plain string match is a case-insensitive substring.
+ */
+function wholeWords(text: string): RegExp {
+  const escaped = text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`(?<![\\p{L}\\p{N}_])${escaped}(?![\\p{L}\\p{N}_])`, 'u');
+}
+
 const trim = (s: string) => (s.length > MAX_DETAIL ? `${s.slice(0, MAX_DETAIL)}…` : s);
 const firstLine = (s: string) => s.split('\n')[0]?.trim() ?? '';
 
@@ -53,7 +62,7 @@ type Outcome = { ok: boolean; detail: string; failure?: AssertionResult['failure
 async function evaluate(a: Assertion, env: AssertEnv): Promise<Outcome> {
   const { page } = env;
   const until = Math.min(Date.now() + env.pollMs, env.deadline);
-  const visible = (text: string) => page.getByText(text).filter({ visible: true }).count();
+  const visible = (text: string) => page.getByText(wholeWords(text)).filter({ visible: true }).count();
 
   if ('textVisible' in a) {
     const ok = await poll(async () => (await visible(a.textVisible)) > 0, until);
@@ -76,9 +85,8 @@ async function evaluate(a: Assertion, env: AssertEnv): Promise<Outcome> {
   }
   if ('api' in a) return api(a.api, env);
   if ('noConsoleErrors' in a) {
-    const real = env.consoleErrors.filter(
-      (c) => !env.blockedUrls.has(c.url) && !(env.blockedUrls.size > 0 && c.text.startsWith('Failed to load resource')),
-    );
+    // Chromium reports a failed load at the resource's URL, so the guard's own blocks are exactly these.
+    const real = env.consoleErrors.filter((c) => !env.blockedUrls.has(c.url));
     return real.length === 0
       ? { ok: true, detail: 'no console errors' }
       : { ok: false, detail: `${real.length} console error(s): ${firstLine(real[0]!.text)}`, failure: 'app' };
@@ -96,7 +104,13 @@ async function api(spec: Extract<Assertion, { api: unknown }>['api'], env: Asser
   if (env.forbidden(spec.method, url.href)) {
     return { ok: false, detail: `${spec.method} ${spec.path} matches a forbidden rule; not sent`, failure: 'blocked' };
   }
-  const res = await env.context.request.fetch(url.href, { method: spec.method, failOnStatusCode: false, timeout: API_TIMEOUT_MS });
+  // No redirects: a hop could reach a `forbidden` path that was only checked for the first URL (Req 2.5).
+  const res = await env.context.request.fetch(url.href, {
+    method: spec.method,
+    failOnStatusCode: false,
+    maxRedirects: 0,
+    timeout: API_TIMEOUT_MS,
+  });
   const status = res.status();
   if (spec.status !== undefined && status !== spec.status) {
     return { ok: false, detail: `${spec.method} ${spec.path} returned ${status}, expected ${spec.status}`, failure: 'app' };

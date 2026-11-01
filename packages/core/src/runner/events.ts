@@ -44,10 +44,21 @@ export function createEventSink(opts: {
     }
   };
 
+  /** Redacts string values only: scrubbing the serialized line could hit keys, numbers or JSON framing. */
+  const scrub = (v: unknown): unknown =>
+    typeof v === 'string'
+      ? redactor.redact(v)
+      : Array.isArray(v)
+        ? v.map(scrub)
+        : v !== null && typeof v === 'object'
+          ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, scrub(x)]))
+          : v;
+
   return {
     emit(input) {
-      const line = redactor.redact(JSON.stringify({ ...input, t: now() }));
-      deliver(JSON.parse(line) as RunEvent);
+      const event = scrub({ ...input, t: now() }) as RunEvent;
+      deliver(event);
+      const line = JSON.stringify(event);
       if (outDir) write(() => appendFile(join(outDir, 'events.ndjson'), `${line}\n`));
     },
     frame(ghostId, jpeg) {

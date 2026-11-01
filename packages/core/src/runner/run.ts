@@ -37,7 +37,12 @@ const SETTLE_MS = 2000;
 const firstLine = (s: string) => s.split('\n')[0]?.trim() ?? '';
 const message = (err: unknown) => firstLine(err instanceof Error ? err.message : String(err));
 const now = () => performance.timeOrigin + performance.now();
-const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+/** A sleep that can be cancelled, so no timer outlives `runPlans` (a CLI would hang at exit). */
+function timer(ms: number): { done: Promise<void>; cancel(): void } {
+  let handle: NodeJS.Timeout | undefined;
+  const done = new Promise<void>((r) => (handle = setTimeout(r, ms)));
+  return { done, cancel: () => clearTimeout(handle) };
+}
 
 function intOption(name: string, value: number | undefined, fallback: number, min: number, max: number): number {
   const v = value ?? fallback;
@@ -209,7 +214,8 @@ async function runPair(plan: HauntingPlan, rep: number, s: Shared): Promise<Pair
       );
       const holds = await installHolds(context, origin);
       await installOverlay(context);
-      if (s.opts.outDir) await context.tracing.start({ screenshots: true, snapshots: true });
+      // A context seeded with a session would put its cookies in the trace (D-20, Req 2.8): no trace.
+      if (s.opts.outDir && !storageState) await context.tracing.start({ screenshots: true, snapshots: true });
       const page = await context.newPage();
       page.on('console', (m) => {
         if (m.type() === 'error') consoleErrors.push({ text: m.text(), url: m.location().url });
@@ -240,7 +246,8 @@ async function runPair(plan: HauntingPlan, rep: number, s: Shared): Promise<Pair
       return started;
     });
     const all = Promise.all(runs.map((r) => r.done));
-    const timedOut = await Promise.race([all.then(() => false), sleep(Math.max(0, planStart + s.planTimeoutMs - Date.now())).then(() => true)]);
+    const budget = timer(Math.max(0, planStart + s.planTimeoutMs - Date.now()));
+    const timedOut = await Promise.race([all.then(() => false), budget.done.then(() => true)]).finally(budget.cancel);
     if (timedOut) {
       for (const a of actors) {
         barriers.leave(a.name);
@@ -276,9 +283,12 @@ async function runPair(plan: HauntingPlan, rep: number, s: Shared): Promise<Pair
       }
     }
 
-    await keepEvidence(plan, rep, s, actors, result, outcome !== 'completed', result.assertions);
+    await keepEvidence(plan, rep, s, actors, result, outcome !== 'completed', result.assertions, storageState !== undefined);
     finish(outcome, error);
-    if (timedOut) await Promise.race([all.catch(() => undefined), sleep(SETTLE_MS)]);
+    if (timedOut) {
+      const settle = timer(SETTLE_MS);
+      await Promise.race([all.catch(() => undefined), settle.done]).finally(settle.cancel);
+    }
     return result;
   } catch (err) {
     return finish('systemError', message(err));
@@ -299,6 +309,7 @@ async function keepEvidence(
   result: PairRepResult,
   repFailed: boolean,
   assertions: AssertionResult[],
+  fromSession: boolean,
 ): Promise<void> {
   const outDir = s.opts.outDir;
   if (!outDir) return;
@@ -313,7 +324,9 @@ async function keepEvidence(
         result.artifacts.push(file);
       }
     }
-    if (failed && !a.run?.loggedIn) {
+    if (fromSession) {
+      if (failed) result.notes.push(`trace dropped for actor ${a.name}: it started from a session (cookies are secrets)`);
+    } else if (failed && !a.run?.loggedIn) {
       const file = `${rel}/trace-${a.name}.zip`;
       if (await a.context.tracing.stop({ path: join(outDir, file) }).then(() => true, () => false)) result.artifacts.push(file);
     } else {

@@ -125,6 +125,29 @@ describe('runAssertions', () => {
     expect(oks(await check('/claims', [{ noUncaughtExceptions: true }]))).toEqual([true]);
   });
 
+  it('noConsoleErrors still fails on an app error when something else was blocked', async () => {
+    const [r] = await check('/mixed', [{ noConsoleErrors: true }]);
+    expect(r?.ok).toBe(false);
+    expect(r?.detail).toMatch(/500/);
+  });
+
+  it('never follows an api redirect onto a forbidden path', async () => {
+    const [r] = await check('/claims', [{ api: { method: 'DELETE', path: '/api/redir', status: 307 } }]);
+    expect(r?.ok).toBe(true);
+    expect(fixture.seen()).not.toContain('DELETE /api/admin/all');
+  });
+
+  it('matches text case-sensitively on whole words', async () => {
+    const rs = await check('/form', [
+      { textNotVisible: 'Error' },
+      { textVisible: '1 claimed' },
+      { textVisible: 'errors here' },
+      { textVisible: '11 claimed' },
+      { textVisible: 'Notes' },
+    ]);
+    expect(oks(rs)).toEqual([true, false, true, true, true]);
+  });
+
   it('redacts details', async () => {
     const [r] = await check('/claims', [{ textVisible: 's3cret' }]);
     expect(r?.detail).not.toContain('s3cret');

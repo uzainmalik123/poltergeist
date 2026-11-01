@@ -45,6 +45,7 @@
 | KI-34 | F05 Done-when (≥ 80% valid or justified `notApplicable`, live LLM) not yet run against the real Candy Swap; KI-01 spike re-scoped to use F05 | Major | F05 sign-off, KI-01 spike | Open |
 | KI-35 | F05 review minors: cache/plan write failure loses paid results, duplicate persona ids, prompt changes not in the cache key (title, snapshot, manual `PROMPT_VERSION`), same path under two identities, unstated prompt limits, backslash `api` paths, theme words via user/app content | Minor | F06, F09 | Open |
 | KI-36 | F06 Done-when (12 ghosts on real Candy Swap in < 5 min) not yet run against the real Candy Swap (built against a fixture, D-33) | Major | F06 sign-off | Open |
+| KI-37 | F06 review minors: plan timeout doesn't stop actors (late steps and events), `ghost.step` vs late `blocked-by-rule`, rep error names the broken-barrier actor, a 2-actor plan exceeds `concurrency: 1`, assertions after a leak abort, unredacted URL on `RunnerSafetyError`, screencast frames dropped in Node, small cleanups | Minor | F07, F09, F12 | Open |
 
 ---
 
@@ -388,4 +389,15 @@
 - **Context:** F06 was built fixture-first (D-33): F10 isn't built, so there's no real Candy Swap to haunt.
 - **Blocks:** F06 sign-off.
 - **Next action:** once F10 exists, run a full Candy Swap haunting at concurrency 12 and confirm it finishes in < 5 min, and that a Doppelgänger plan's actors leave the barrier < 50 ms apart on real Candy Swap. Record the timing here.
+
+### KI-37: F06 review minors · Minor · Open
+- **Context:** the final review of F06 (2026-11-01). Its Critical and Important findings were fixed before merge (D-33 review fixes): session cookies and passwords in traces, an over-broad `noConsoleErrors` filter, timers left after `runPlans`, line-level event redaction, `api` redirects past `forbidden`, and substring text matching.
+- **Timeout:** a plan timeout breaks barriers and releases holds but doesn't stop the actors. They can keep acting during evidence capture and the 2 s settle; `result.steps` holds live objects; late `ghost.step` events can land after `rep.finished` (and after the final flush, so their write errors are lost). Fix: a per-pair `AbortController` combined with the run signal (`AbortSignal.any`), aborted on timeout, then close contexts before snapshotting steps.
+- **Attribution:** `ghost.step` is emitted with `ok` before a late guard report marks the step `blocked-by-rule`, and a late report can overwrite a `failed`/`timeout` outcome. Only upgrade from `ok`; consider a follow-up event.
+- **Errors:** the rep error comes from the first actor in name order, so "barrier broken" can hide the other actor's root cause. Prefer a non-`broken` end.
+- **Concurrency:** a 2-actor plan at `concurrency: 1` opens 2 contexts (the scheduler clamps). Reject it or record it.
+- **Leak:** a pair whose actors finished before the abort still runs its assertions (including `api` fetches); `RunnerSafetyError.blocked` keeps the raw URL. Check the signal before asserting, and pass the redacted copy.
+- **Frames:** every screencast frame is acked and decoded in Node, then dropped to ≤ 4 fps. With 20 contexts that is real CDP load (KI-08). Use `everyNthFrame` or pace the acks.
+- **Cleanups:** `keepEvidence` can leave an empty artifacts folder when every trace was dropped; `applyThrottle` never detaches its CDP session.
+- **Next action:** fix the timeout and attribution items with F07 (it consumes these results); frames with F12.
 

@@ -161,7 +161,7 @@ The runner (F06) emits the `rep.*`, `reset.*`, `ghost.*`, `guard.*` and `assert.
     plans/<criterion>__<persona>.json
     events.ndjson
     frames/<ghostId>/<seq>.jpg
-    artifacts/<criterion>__<persona>__rep<k>/{screenshot-<actor>.png,trace-<actor>.zip}   failed reps only; no trace for an actor that ran a login step
+    artifacts/<criterion>__<persona>__rep<k>/{screenshot-<actor>.png,trace-<actor>.zip}   failed reps only; no trace for an actor that started from a session or ran a login step (secrets)
     verdicts.json
 ```
 

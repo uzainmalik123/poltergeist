@@ -43,6 +43,7 @@ const FORM = page(
 <button>Clear</button><button>Clear</button>
 <p data-testid="saved"></p>
 <p id="late"></p>
+<p>No errors here, 11 claimed</p>
 <script>
   document.getElementById('save').addEventListener('click', () => {
     document.querySelector('[data-testid=saved]').textContent = document.getElementById('n').value;
@@ -143,6 +144,14 @@ export async function startClaimsFixture(): Promise<ClaimsFixture> {
         );
       }
       if (path.startsWith('/api/admin/')) return json(res, 200, { deleted: true });
+      if (path === '/api/boom') return json(res, 500, { error: 'boom' });
+      if (path === '/api/redir') {
+        res.writeHead(307, { location: '/api/admin/all' });
+        return res.end();
+      }
+      if (path === '/mixed') {
+        return send(res, 200, page('Mixed', `<p>mixed</p><img src="http://evil.test/pixel.png" alt=""><script>fetch('/api/boom')</script>`));
+      }
       if (path === '/hang') {
         return send(res, 200, page('Hang', `<button id="s">Save</button><script>document.getElementById('s').onclick = () => fetch('/api/hang', { method: 'POST' });</script>`));
       }

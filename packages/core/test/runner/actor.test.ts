@@ -24,7 +24,10 @@ beforeAll(async () => {
     {
       target: fixture.origin,
       routes: [{ path: '/claims', auth: true }],
-      accounts: { default: { loginRoute: '/login', username: USER, password: 'env:GHOST_PASS' } },
+      accounts: {
+        default: { loginRoute: '/login', username: USER, password: 'env:GHOST_PASS' },
+        slow: { loginRoute: '/api/hang', username: USER, password: 'slow-pass-1' },
+      },
     },
     { configPath: join(tmpdir(), 'poltergeist.config.json'), env: { GHOST_PASS: PASSWORD } },
   );
@@ -117,6 +120,13 @@ describe('runActor', () => {
     const out = await runActor([{ logout: true }, { goto: '/claims' }], e);
     expect(out.end).toBe('done');
     expect(new URL(e.page.url()).pathname).toBe('/login');
+  });
+
+  it('counts a login that times out as logged in (the password may be typed)', async () => {
+    const e = await env({ session: false, stepTimeoutMs: 500 });
+    const run = await runActor([{ login: { account: 'slow' } }], e);
+    expect(run.end).not.toBe('done');
+    expect(run.loggedIn).toBe(true);
   });
 
   it('fails a login to an unknown account', async () => {

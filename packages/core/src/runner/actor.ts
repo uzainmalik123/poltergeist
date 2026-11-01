@@ -101,8 +101,8 @@ export function startActor(steps: readonly Step[], env: ActorEnv): { run: ActorR
     else if ('login' in step) {
       const account = env.loaded.config.accounts?.[step.login.account];
       if (!account) throw new StepFailure(`unknown account "${step.login.account}"`);
+      run.loggedIn = true; // before the call: a timed-out login may already have typed the password
       const r = await login(page, account, { origin: env.origin, deadline: Date.now() + stepTimeoutMs, redactor: env.loaded.redactor });
-      run.loggedIn = true;
       if (!r.ok) throw new StepFailure(r.reason);
     } else if ('logout' in step) {
       await context.clearCookies();

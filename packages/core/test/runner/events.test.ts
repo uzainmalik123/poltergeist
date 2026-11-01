@@ -57,6 +57,16 @@ describe('createEventSink', () => {
     expect(await readFile(join(outDir, 'events.ndjson'), 'utf8')).not.toContain('s3cret');
   });
 
+  it('redacts string values only, so short secrets never break the line or its keys', async () => {
+    const outDir = await mkdtemp(join(tmpdir(), 'events-'));
+    const got: RunEvent[] = [];
+    const sink = createEventSink({ outDir, redactor: new Redactor(['1', 'ok', 'true']), onEvent: (e) => got.push(e), now: () => 1_700_000_000_111 });
+    expect(() => sink.emit({ type: 'reset.finished', rep: 1, ok: true, durationMs: 11, error: 'pw 1 ok' })).not.toThrow();
+    await sink.flush();
+    expect(got[0]).toEqual({ type: 'reset.finished', rep: 1, ok: true, durationMs: 11, error: 'pw [REDACTED] [REDACTED]', t: 1_700_000_000_111 });
+    expect((await lines(outDir))[0]).toEqual(got[0]);
+  });
+
   it('swallows a throwing onEvent and still writes', async () => {
     const outDir = await mkdtemp(join(tmpdir(), 'events-'));
     const sink = createEventSink({ outDir, redactor: new Redactor([]), onEvent: () => { throw new Error('bad listener'); } });

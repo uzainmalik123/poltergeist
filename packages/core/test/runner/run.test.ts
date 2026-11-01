@@ -128,7 +128,7 @@ describe('runPlans', () => {
 
   it('keeps a screenshot and trace for a failed rep only', async () => {
     const outDir = await mkdtemp(join(tmpdir(), 'run-'));
-    const failing = plan('7.1', 'wraith', { a: [{ goto: '/claims' }] }, [{ textVisible: 'Nope' }]);
+    const failing = plan('7.1', 'wraith', { a: [{ goto: '/form' }] }, [{ textVisible: 'Nope' }], [{ path: '/form', identity: 'anonymous' }]);
     const passing = plan('7.2', 'wraith', { a: [{ goto: '/form' }] }, [{ textVisible: 'Notes' }], [{ path: '/form', identity: 'anonymous' }]);
     const r = await runPlans(browser, loadFor(fixture.origin), [failing, passing], { sessions, outDir, reps: 1, frameFps: 0 });
     const f = r.results.find((x) => x.criterion === '7.1')!;
@@ -137,6 +137,22 @@ describe('runPlans', () => {
     const ok = r.results.find((x) => x.criterion === '7.2')!;
     expect(ok.artifacts).toEqual([]);
     expect(await exists(join(outDir, 'artifacts', '7.2__wraith__rep1'))).toBe(false);
+  });
+
+  it('never keeps a trace of an actor that started from a session (cookies are secrets)', async () => {
+    const outDir = await mkdtemp(join(tmpdir(), 'run-'));
+    const p = plan('7.4', 'wraith', { a: [{ goto: '/claims' }] }, [{ textVisible: 'Nope' }]);
+    const [res] = (await runPlans(browser, loadFor(fixture.origin), [p], { sessions, outDir, reps: 1, frameFps: 0 })).results;
+    expect(res?.artifacts).toEqual(['artifacts/7.4__wraith__rep1/screenshot-a.png']);
+    expect(res?.notes.join(' ')).toMatch(/trace dropped.*session/);
+  });
+
+  it('leaves no timers behind once it returns', async () => {
+    const timers = () => process.getActiveResourcesInfo().filter((t) => t === 'Timeout').length;
+    const before = timers();
+    const p = plan('7.5', 'wraith', { a: [{ goto: '/form' }] }, [{ textVisible: 'Notes' }], [{ path: '/form', identity: 'anonymous' }]);
+    await runPlans(browser, loadFor(fixture.origin), [p], { sessions, reps: 1, frameFps: 0 });
+    expect(timers()).toBeLessThanOrEqual(before);
   });
 
   it('drops the trace of an actor that logged in', async () => {
