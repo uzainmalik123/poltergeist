@@ -2,8 +2,8 @@ import { execFile } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
-import { ConfigError, loadConfig, parseSpec, runReset, type LoadedConfig } from '@poltergeist/core';
-import { checkDeterminism, checkResetTiming, checkSpecShape, type Finding } from './check.js';
+import { ConfigError, loadConfig, parseSpec, ResetError, runReset, type LoadedConfig } from '@poltergeist/core';
+import { checkDeterminism, checkResetTiming, checkSpecShape, RESET_BUDGET_MS, type Finding } from './check.js';
 
 const exec = promisify(execFile);
 
@@ -14,10 +14,25 @@ const PLACEHOLDER = 'candy-check-placeholder';
 const RESETS = 2;
 const DUMP_TIMEOUT_MS = 30_000;
 
+const TAIL_LINES = 20;
+
 const message = (e: unknown): string => (e instanceof Error ? e.message : String(e));
+const tail = (text: string): string => text.trimEnd().split(/\r?\n/).slice(-TAIL_LINES).join('\n');
+
+/** A failed `npm run` from `execFile`: its first line plus the tail of what the script printed. */
+function execFailure(e: unknown): string {
+  const { stderr, stdout } = e as { stderr?: string; stdout?: string };
+  const output = tail(stderr || stdout || '');
+  return output ? `${message(e).split('\n')[0]}\n${output}` : message(e).split('\n')[0]!;
+}
 
 /** F10's Done-when against Kiro's Candy Swap in `fixtureDir` (D-37). Failures are findings, never throws. */
-export async function runCandyCheck(opts: { fixtureDir: string; env?: NodeJS.ProcessEnv }): Promise<Finding[]> {
+export async function runCandyCheck(opts: {
+  fixtureDir: string;
+  env?: NodeJS.ProcessEnv;
+  /** Override `RESET_BUDGET_MS`; tests use a large value so a slow runner can't flake them. */
+  resetBudgetMs?: number;
+}): Promise<Finding[]> {
   const { fixtureDir } = opts;
   const env = { ...(opts.env ?? process.env) };
   const specDir = join(fixtureDir, SPEC_SUBDIR);
@@ -56,7 +71,8 @@ export async function runCandyCheck(opts: { fixtureDir: string; env?: NodeJS.Pro
       }
       durations.push(result.durationMs);
     } catch (e) {
-      findings.push({ level: 'fail', check: 'reset', message: message(e) });
+      const output = e instanceof ResetError && e.outputTail ? `\n${e.outputTail}` : '';
+      findings.push({ level: 'fail', check: 'reset', message: `${message(e)}${output}` });
       return findings;
     }
     try {
@@ -68,10 +84,10 @@ export async function runCandyCheck(opts: { fixtureDir: string; env?: NodeJS.Pro
       });
       dumps.push(stdout);
     } catch (e) {
-      findings.push({ level: 'fail', check: 'dump', message: `npm run db:dump failed: ${message(e).split('\n')[0]}` });
+      findings.push({ level: 'fail', check: 'dump', message: `npm run db:dump failed: ${execFailure(e)}` });
       return findings;
     }
   }
-  findings.push(checkResetTiming(durations), checkDeterminism(dumps));
+  findings.push(checkResetTiming(durations, opts.resetBudgetMs ?? RESET_BUDGET_MS), checkDeterminism(dumps));
   return findings;
 }

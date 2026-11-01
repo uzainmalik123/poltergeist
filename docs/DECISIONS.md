@@ -482,5 +482,12 @@
   - **Standalone package:** Candy Swap is installed with `npm --prefix fixtures/candy-swap install` and is **not** in the root `workspaces`. That keeps native better-sqlite3 out of root `npm ci` and CI. STACK.md is updated to match.
   - **`candy:check`:** spec shape (6–8 requirements and 20–30 criteria are warnings; any F01 warning is a failure that names its code for KI-16). The config loads (with a placeholder and a warning when `CANDY_SWAP_PASSWORD` is unset). Two resets, each followed by `db:dump`, with every reset ≤ 1000 ms and canonical-JSON dumps equal. Exit 1 on any failure. Failures are findings, never stack traces. Until Kiro builds the app, it exits 1 with "not built yet (KI-44)".
   - `forbidden` stays empty until the first haunting shows what needs it. A second account gets added only when a plan needs one.
+- **Review fixes (2026-11-01):**
+  - **Reset while the server runs:** the brief now asks for a `db:reset` that restores the seed while `dev` is running, with no restart and the server seeing it at once (Poltergeist resets before every rep, D-33). It no longer says "deletes and recreates", which leaves a running better-sqlite3 server on the old file. The human checklist adds a manual "claim, reset, reload" check, because `candy:check` never starts the server.
+  - **Determinism scope:** only the candy, inventory and trade rows must be identical, and `db:dump` leaves out password data. Normal random-salt password hashing therefore passes, and the prompt doesn't push Kiro towards fixed salts.
+  - **Lint:** root eslint ignores `fixtures/candy-swap/**` (Kiro's output is never hand-edited, so its lint findings could never be fixed).
+  - **Gated spec test:** it now compares Kiro's F01 warning codes with a recorded list (`CANDY_KNOWN_WARNINGS`, empty until KI-16 notes are added), instead of requiring zero warnings and 6–8 requirements. The PRD allows warnings that become KI-16 notes, and the spec shape is `candy:check`'s warning.
+  - **`candy:check`:** reset and dump failures include the script's output tail, `runCandyCheck` takes `resetBudgetMs` so tests can't flake on a slow runner, and the timing message says it includes npm startup.
+  - Deferred minors are in KI-45.
 - **Consequences:** F10 stays open until the Kiro build lands (KI-44). Then `candy:check` is its Done-when, and KI-30/34/36/38/42 follow. If Kiro picks other URLs, the config changes, not the app.
 

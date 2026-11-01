@@ -11,6 +11,8 @@ const repoRoot = join(here, '../..');
 const REAL_CONFIG = join(repoRoot, 'fixtures/candy-swap/poltergeist.config.json');
 const DRAFT_SPEC = join(repoRoot, 'packages/core/test/fixtures/spec/candy-swap-draft/requirements.md');
 const ENV = { ...process.env, CANDY_SWAP_PASSWORD: 'boo' };
+/** Tests not about timing must not flake on a slow runner, where npm alone can take seconds. */
+const SLACK = 60_000;
 
 const dirs: string[] = [];
 afterEach(async () => {
@@ -18,13 +20,13 @@ afterEach(async () => {
 });
 
 /** A temp stand-in for `fixtures/candy-swap` whose `db:dump` runs `dumpJs` with node. */
-async function fakeFixture(dumpJs: string): Promise<string> {
+async function fakeFixture(dumpJs: string, resetJs = '0'): Promise<string> {
   const dir = await mkdtemp(join(tmpdir(), 'candy-check-'));
   dirs.push(dir);
   await cp(REAL_CONFIG, join(dir, 'poltergeist.config.json'));
   await mkdir(join(dir, '.kiro/specs/candy-swap'), { recursive: true });
   await cp(DRAFT_SPEC, join(dir, '.kiro/specs/candy-swap/requirements.md'));
-  const scripts = { 'db:reset': 'node -e "0"', 'db:dump': `node -e ${JSON.stringify(dumpJs)}` };
+  const scripts = { 'db:reset': `node -e ${JSON.stringify(resetJs)}`, 'db:dump': `node -e ${JSON.stringify(dumpJs)}` };
   await writeFile(join(dir, 'package.json'), JSON.stringify({ name: 'fake-candy', private: true, scripts }));
   return dir;
 }
@@ -41,7 +43,7 @@ describe('runCandyCheck', () => {
 
   it('passes a healthy fixture', async () => {
     const dir = await fakeFixture('console.log(JSON.stringify([{id:1}]))');
-    const findings = await runCandyCheck({ fixtureDir: dir, env: ENV });
+    const findings = await runCandyCheck({ fixtureDir: dir, env: ENV, resetBudgetMs: SLACK });
     expect(fails(findings)).toEqual([]);
     expect(findings.map((f) => f.check)).toEqual(
       expect.arrayContaining(['spec-warnings', 'config', 'reset-time', 'reset-deterministic']),
@@ -52,19 +54,34 @@ describe('runCandyCheck', () => {
     const dir = await fakeFixture('console.log("[]")');
     const env = { ...process.env };
     delete env.CANDY_SWAP_PASSWORD;
-    const findings = await runCandyCheck({ fixtureDir: dir, env });
+    const findings = await runCandyCheck({ fixtureDir: dir, env, resetBudgetMs: SLACK });
     expect(findings).toContainEqual(expect.objectContaining({ level: 'warn', check: 'password-env' }));
     expect(findings).toContainEqual(expect.objectContaining({ level: 'ok', check: 'config' }));
   }, 30_000);
 
   it('fails determinism when the dump changes between resets', async () => {
     const dir = await fakeFixture('console.log(JSON.stringify(process.hrtime.bigint().toString()))');
-    expect(fails(await runCandyCheck({ fixtureDir: dir, env: ENV }))).toEqual(['reset-deterministic']);
+    expect(fails(await runCandyCheck({ fixtureDir: dir, env: ENV, resetBudgetMs: SLACK }))).toEqual(['reset-deterministic']);
   }, 30_000);
 
-  it('reports a failing db:dump as a finding instead of throwing', async () => {
-    const dir = await fakeFixture('process.exit(1)');
-    expect(fails(await runCandyCheck({ fixtureDir: dir, env: ENV }))).toEqual(['dump']);
+  it('reports a failing db:dump as a finding with its stderr, instead of throwing', async () => {
+    const dir = await fakeFixture('console.error("dump-broke-here"); process.exit(1)');
+    const findings = await runCandyCheck({ fixtureDir: dir, env: ENV, resetBudgetMs: SLACK });
+    expect(fails(findings)).toEqual(['dump']);
+    expect(findings.find((f) => f.check === 'dump')!.message).toContain('dump-broke-here');
+  }, 30_000);
+
+  it('reports a failing db:reset as a finding with its output tail', async () => {
+    const dir = await fakeFixture('console.log("[]")', 'console.error("seed-broke-here"); process.exit(1)');
+    const findings = await runCandyCheck({ fixtureDir: dir, env: ENV, resetBudgetMs: SLACK });
+    expect(fails(findings)).toEqual(['reset']);
+    expect(findings.find((f) => f.check === 'reset')!.message).toContain('seed-broke-here');
+  }, 30_000);
+
+  it('applies the reset budget it is given', async () => {
+    const dir = await fakeFixture('console.log("[]")');
+    const findings = await runCandyCheck({ fixtureDir: dir, env: ENV, resetBudgetMs: 0 });
+    expect(fails(findings)).toEqual(['reset-time']);
   }, 30_000);
 });
 

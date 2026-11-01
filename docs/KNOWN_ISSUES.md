@@ -53,6 +53,7 @@
 | KI-42 | F09 Done-when (`npm ci && npx playwright-core install chromium && npm run summon` on Candy Swap from a clean clone) not yet run: built against a fixture (D-36) | Major | F09 sign-off | Open |
 | KI-43 | F09 review minors: more invisible characters (U+034F, U+115F, U+3164, tag characters…), live block garbles on wrap or short terminals, abort not re-checked during verdicts/report, API key read late and from `process.env`, no frame backpressure for slow `--seance` clients, no CLI test aborting mid-compile or mid-rep | Minor | F12, F11 | Open |
 | KI-44 | Candy Swap not yet built in Kiro: only the F10 prep kit exists (D-37) | Major | F10, KI-30/34/36/38/42, demo | Open |
+| KI-45 | F10 prep review minors: non-JSON dump gives no snippet, `db:dump` gets provider keys, unreadable spec crashes `candy:check`, no-op reset passes determinism, KI-30 note formatting | Minor | F10 | Open |
 
 ---
 
@@ -475,4 +476,13 @@
 - **Blocks:** F10's Done-when, and with it every real Candy Swap check (KI-30, KI-34, KI-36, KI-38, KI-42), the KI-01 spike and the demo.
 - **Next action:** a person on the team opens `fixtures/candy-swap/` in Kiro, pastes the prompt from `docs/plans/2026-11-01-F10-kiro-brief.md`, lets Kiro run spec → implement, commits the output as is, then runs `npm --prefix fixtures/candy-swap install && npm run candy:check`.
 - **Risk:** Kiro may pick other URLs or skip `db:dump`. Change our config, or ask Kiro for the missing script in a follow-up Kiro session. Never hand-edit the app.
+
+### KI-45: F10 prep review minors · Minor · Open
+- **Context:** the final review of the F10 prep kit (2026-11-01). Its Important findings were fixed before merge (D-37 review fixes).
+- **Non-JSON dump:** `checkDeterminism` says "db:dump #N is not valid JSON" with no snippet. A dotenv log line on stdout is a likely cause. Include the first ~80 characters.
+- **Provider keys:** `db:dump` runs with `loaded.env` as is, while `runReset` strips `PROVIDER_ENV_KEYS` (KI-29). Strip them for the dump too.
+- **Unreadable spec:** if `requirements.md` exists but can't be read, `parseSpec` throws and `main.ts` prints a stack trace. Return a `spec` fail instead.
+- **No-op reset:** two back-to-back resets with nothing in between pass determinism even if `db:reset` does nothing. The brief's manual "claim, reset, reload" step covers it for now.
+- **Formatting:** the KI-30 F10 note sits after a blank line, and `### KI-31` follows it without one.
+- **Next action:** fix these with the first `candy:check` run on Kiro's real output (KI-44).
 

@@ -26,13 +26,13 @@ export function checkSpecShape(spec: ParsedSpec): Finding[] {
   ];
 }
 
-/** Every reset finishes within `RESET_BUDGET_MS`. */
-export function checkResetTiming(durationsMs: number[]): Finding {
+/** Every reset finishes within the budget (`RESET_BUDGET_MS` by default; npm's own startup is included). */
+export function checkResetTiming(durationsMs: number[], budgetMs: number = RESET_BUDGET_MS): Finding {
   const max = Math.max(...durationsMs);
   const runs = durationsMs.map((d) => `${d} ms`).join(', ');
-  return max <= RESET_BUDGET_MS
-    ? { level: 'ok', check: 'reset-time', message: `db:reset took ${runs} (budget ${RESET_BUDGET_MS} ms)` }
-    : { level: 'fail', check: 'reset-time', message: `db:reset took up to ${max} ms (${runs}); budget is ${RESET_BUDGET_MS} ms` };
+  return max <= budgetMs
+    ? { level: 'ok', check: 'reset-time', message: `db:reset took ${runs} incl. npm startup (budget ${budgetMs} ms)` }
+    : { level: 'fail', check: 'reset-time', message: `db:reset took up to ${max} ms incl. npm startup (${runs}); budget is ${budgetMs} ms` };
 }
 
 /** JSON with object keys sorted recursively; array order is kept. */
