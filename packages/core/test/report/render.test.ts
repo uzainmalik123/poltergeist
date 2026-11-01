@@ -123,8 +123,20 @@ describe('renderReport: edge cases', () => {
     const base = input();
     const criteria = base.criteria.map((c) => (c.id === '3.2' ? { ...c, text: 'Use `code` | here\nnext' } : c));
     const md = renderReport({ ...base, criteria }).markdown;
-    expect(md).toContain('- [!!] 3.2 — Use `code` | here next');
+    expect(md).toContain('- [!!] 3.2 — Use \\`code\\` \\| here next');
     expect(md).toContain('(Claims): ``Use `code` | here next``');
+  });
+
+  it('escapes markdown in board lines, headings and the intent (KI-41)', () => {
+    const base = input();
+    const criteria = base.criteria.map((c) => (c.id === '3.2' ? { ...c, text: 'Hidden <!-- rest' } : c));
+    const race = { ...RACE, intent: '**bold** [x](y)' };
+    const pairs = base.compiled.map((p) => (p.status === 'compiled' && p.criterion === '3.2' ? { ...p, plan: race } : p));
+    const md = renderReport({ ...base, criteria, compiled: pairs }).markdown;
+    expect(md).toContain('- [!!] 3.2 — Hidden \\<!-- rest');
+    expect(md).toContain('### [!!] 3.2 — Hidden \\<!-- rest');
+    expect(md).toContain('**Intent:** \\*\\*bold\\*\\* \\[x\\](y)');
+    expect(md.split('\n').filter((l) => l.includes('Hidden <!--')).every((l) => l.includes('`Hidden <!-- rest`'))).toBe(true);
   });
 
   it('stays within 300 lines with 40 haunted criteria and keeps everything in the JSON (Review Focus 3)', () => {
