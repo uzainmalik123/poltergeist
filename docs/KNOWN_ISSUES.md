@@ -46,6 +46,10 @@
 | KI-35 | F05 review minors: cache/plan write failure loses paid results, duplicate persona ids, prompt changes not in the cache key (title, snapshot, manual `PROMPT_VERSION`), same path under two identities, unstated prompt limits, backslash `api` paths, theme words via user/app content | Minor | F06, F09 | Open |
 | KI-36 | F06 Done-when (12 ghosts on real Candy Swap in < 5 min) not yet run against the real Candy Swap (built against a fixture, D-33) | Major | F06 sign-off | Open |
 | KI-37 | F06 review minors: plan timeout doesn't stop actors (late steps and events), `ghost.step` vs late `blocked-by-rule`, rep error names the broken-barrier actor, a 2-actor plan exceeds `concurrency: 1`, assertions after a leak abort, unredacted URL on `RunnerSafetyError`, screencast frames dropped in Node, small cleanups | Minor | F09, F12 | Open (timeout, attribution and rep error fixed 2026-11-01, F07) |
+| KI-38 | F08 Done-when (an agent reproduces a haunted Candy Swap criterion from the report alone, once with Kiro and once with Claude Code) not yet run on real Candy Swap or in Kiro | Major | F08 sign-off | Open |
+| KI-39 | Timeouts are `inconclusive` (D-34), so slow-device breakage (Lich: hidden buttons, timeouts) can never be `haunted` | Minor | F16 | Open |
+| KI-40 | The report uses core's draft wordmark and glyph table until F26 ships `@poltergeist/costume` | Minor | F26, F09 | Open |
+| KI-41 | F08 review minors: markdown/HTML in criterion text and plan strings outside code spans, bidi/invisible characters pass `oneLine`, flaky pairs under a haunted criterion hidden in markdown, orphan `.tmp` after a kill, non-atomic pair of files, long wordmark override, Windows cross-drive paths | Minor | F09, F11 | Open |
 
 ---
 
@@ -403,3 +407,41 @@
 - **2026-11-01 (F07, D-34):** fixed the **timeout** item (a per-pair abort stops actors at their next step, `steps` is a copy, the step in flight is recorded as `timeout` / "plan exceeded N ms" and emits no `ghost.step`), the **attribution** item (`markBlockedByRule` only upgrades a step from `ok`) and the **errors** item (the rep error prefers an actor whose end isn't a broken barrier). F07 also voids a rep on any `forbidden` guard report, so verdicts don't depend on step attribution. Still open: concurrency (F09), leak (assertions after abort, raw URL on `RunnerSafetyError`), frames (F12), cleanups.
 - **2026-11-01 (F07 final review, deferred minors):** `started.done.then(...)` in `runPair` has no rejection handler (unreachable today: nothing outside the step try/catch throws, and `sink.emit` swallows listener errors); `result.steps` is copied before assertions, so a `forbidden` report arriving during assertions no longer shows on the returned steps (verdicts unaffected: `blocked` stays live and voids the rep), so decide before F08/F12 render steps; exported `decidePair` doesn't validate duplicate/out-of-range reps (only `computeVerdicts` does); a completed rep with zero assertion results counts as clean (F05 rejects empty `assert`); at a timeout a step finishing in the same tick, or one marked `blocked-by-rule`, is relabelled `timeout`; the "not run" case has no distinct reason phrase (F08 can test `outcomes.missing === reps`).
 
+### KI-38: F08 Done-when not yet run on real Candy Swap or in Kiro · Major · Open
+- **Context:** F08 was built fixture-first (D-35). F10 isn't built, and the report hasn't been handed to Kiro's agent yet.
+- **Blocks:** F08 sign-off.
+- **2026-11-01 (Claude Code half, on the fixture):** a fresh Claude Code agent given only the fixture's sample report:
+  - named 3.2 with its file and line;
+  - gave the full two-session barrier reproduction and expected vs actual (3/3 reps);
+  - opened a screenshot artifact;
+  - proposed an atomic insert or unique constraint as the fix.
+
+  The gaps it noted, all F09/F06 follow-ups rather than F08 wording:
+  - the report doesn't name the app endpoint a click hits, or capture the `api` assertion's response body;
+  - screenshots aren't clearly the post-click state;
+  - nothing says the target URL is only valid during the run.
+
+  One fix went into F08: the artifact list now says its paths are relative to the report's folder.
+- **Next action:** once F10 and F09 exist, haunt Candy Swap. Give Kiro's agent only `haunting-report.md` and check it can find and reproduce a haunted criterion. Repeat with Claude Code on Candy Swap. Consider recording the `api` assertion's response body as evidence (F06) and the requests each click caused.
+
+### KI-39: Timeouts can never be `haunted` · Minor · Open
+- **Problem:** D-34 treats step and plan timeouts as `inconclusive`, because a timeout can't tell a slow app apart from a bad plan. A Lich run (slow 3G, small screen) that times out every rep on a hidden button therefore shows `[??]`, not `[!!]`.
+- **Blocks:** F16 (Lich) usefulness.
+- **Next action:** when F16 is built, decide whether a timeout on an action step that succeeds without throttling counts as an app failure (for example, through a control run).
+
+### KI-40: The report's wordmark and glyphs are core drafts until F26 · Minor · Open
+- **Problem:** F26 owns the wordmark and verdict glyphs, but it isn't built. `report/` holds THEME §4's drafts as defaults (D-35).
+- **Next action:** when F26 lands, have F09 pass the Costume Kit's wordmark to `renderReport`, and either re-export the glyph table from `@poltergeist/costume` or keep them identical with a test.
+
+### KI-41: F07/F08 review minors · Minor · Open
+- **Context:** the final review of F08 (2026-11-01). Its Important findings were fixed before merge (D-35 review fixes): an oversized haunted section could be trimmed away, and short or erroring runs were shown as a plain "failed k/N". A third finding, about duplicate or out-of-range reps, belonged to the parallel F07 and is already handled by `main`'s `computeVerdicts`, which throws on both.
+- **Markdown injection:** the board, headings, intent and expected text are flattened by `oneLine` but not escaped. A criterion containing `<!--` hides the rest of the report in a markdown preview, and `<img>`, links or `*`/`_` render. Escape `< > [ ] * _` there, or wrap them in code spans.
+- **Bidi and invisible characters:** `\u202E`, `\u200B` and similar characters pass through `oneLine`. Escape them as `\uXXXX`.
+- **Visibility:** flaky pairs under a haunted criterion only appear in the JSON.
+- **Writes:**
+  - A kill between write and rename leaves `haunting-report.*.tmp` in the spec folder. Remove those leftovers (exact prefix only) on the next write.
+  - The two files aren't swapped together. If the markdown rename fails, its error should name both paths.
+- **Edge cases:**
+  - A `wordmark` override longer than ~290 lines is hard-cut.
+  - On Windows, a `runDir` on another drive gives an absolute path.
+- **Next action:** fix the injection and bidi items before F09 writes real reports, and the rest with F09 or F11.

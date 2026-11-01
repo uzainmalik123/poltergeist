@@ -166,6 +166,8 @@ The runner (F06) emits the `rep.*`, `reset.*`, `ghost.*`, `guard.*` and `assert.
     verdicts.json       computeVerdicts() output (D-34); F14 diffs it by criterion + persona
 ```
 
+After every run, F09 calls `renderReport` and `writeReport` (`packages/core/src/report/`, D-35). Those write `haunting-report.md` and `haunting-report.json` (a versioned zod schema, `ReportJsonSchema`) into the spec folder and nothing else. The markdown is capped at 300 lines; the JSON keeps everything.
+
 ## 10. MCP tools
 
 | Tool | Input | Output |
