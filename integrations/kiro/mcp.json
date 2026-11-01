@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "poltergeist": {
+      "command": "npx",
+      "args": ["poltergeist-mcp", "--root", "."],
+      "env": {
+        "ANTHROPIC_API_KEY": "${ANTHROPIC_API_KEY}"
+      },
+      "autoApprove": ["list_criteria", "get_run_status", "get_haunting_report"]
+    }
+  }
+}
