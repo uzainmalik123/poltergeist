@@ -26,7 +26,7 @@
 | 7 | F05 | Ghost Compiler (LLM → Plan DSL) | High | Done (fixture; live check pending, KI-34) | F01, F03, F04 (built before the spike, D-32) |
 | 8 | F06 | Ghost Runner | High | Done (fixture; real Candy Swap check pending, KI-36) | F02, F05 (built before F10, D-33) |
 | 9 | F07 | Verdicts & Flake Filter | High | Done | F06 |
-| 10 | F08 | Haunting Report | High | TBD | F07 |
+| 10 | F08 | Haunting Report | High | Done (fixture; Kiro + Candy Swap check pending, KI-38) | F07 |
 | 11 | F26 | Costume Kit (glyph renderer, sprites, wordmark, palette, possession) | High | TBD | n/a (can run in parallel from week 2) |
 | 12 | F09 | CLI `summon` | High | TBD | F08, F26 |
 | 13 | F11 | Kiro MCP Server | High | TBD | F09 |
@@ -235,7 +235,9 @@
 - **Constraints:** a pure function, fully table-tested.
 - **Done when:** table tests cover every verdict path, including mixed outcomes and system errors.
 
-### F08: Haunting Report · High · TBD
+### F08: Haunting Report · High · Done (fixture)
+
+> 2026-11-01: built fixture-first (D-35) on `main`'s F07 (`computeVerdicts`, D-34). Plan `docs/plans/2026-11-01-F08-haunting-report.md`. `renderReport` (pure) and `writeReport` (atomic, only `haunting-report.md` and `.json`) live in `packages/core/src/report/`. `test/report/done-when.test.ts` runs the claims fixture's Doppelgänger race through runner → verdicts → report. Criterion 3.2 comes out `[!!]` with steps, expected vs actual, and artifact paths that exist. A fresh Claude Code agent given only the report located the race and described how to reproduce it (KI-38 notes). **Still to do:** the same check in Kiro on real Candy Swap (KI-38). The draft wordmark and glyphs stay in core until F26 (KI-40).
 
 **Owns:** the `haunting-report.md` and `.json` content and wording, in the spec folder. Implements Requirement 8.
 **Not this feature:** terminal output (F09) · UI (F12) · the wordmark and glyphs themselves (F26 provides them).
@@ -463,3 +465,4 @@ Implements Requirement 12.
 - 2026-11-01: **F06 Done against a fixture** (D-33). Raw per-rep results for F07, conflict-key scheduling (KI-13), shared-session Doppelgänger, rendezvous barrier, request holds, ghost-cursor overlay, frames, artifacts, leak abort. The real Candy Swap check is KI-36.
 - 2026-11-01: **F07 Done** (D-34). Pure `computeVerdicts`: ⌈2N/3⌉ of requested reps, app-only failures, forbidden blocks void a rep, `uncompilable` rolls up as `inconclusive`. KI-37's timeout, attribution and rep-error items fixed in the runner.
 - 2026-10-31: **F04 Done** (D-31). Three core personas, eight deterministic generators (adds `plain`), vendored BLNS without injection sections. KI-32 opened (typed inputs).
+- 2026-11-01: **F08 Done against a fixture** (D-35). The report has a board, fix-ready haunted tasks, a 300-line cap that keeps the first task, and a versioned JSON schema. The Kiro and real Candy Swap check is KI-38. Opened KI-39 (timeouts never haunted), KI-40 (draft wordmark until F26) and KI-41 (review minors).

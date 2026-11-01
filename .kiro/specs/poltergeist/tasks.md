@@ -23,7 +23,7 @@ Work happens one PRD feature at a time, through the grill → plan → implement
   - _Requirements: 6.1–6.8, 2.5, 2.7_
 - [x] 9. F07 Verdicts & Flake Filter (D-34)
   - _Requirements: 7.1–7.4_
-- [ ] 10. F08 Haunting Report
+- [x] 10. F08 Haunting Report (fixture; Kiro + real Candy Swap check pending, KI-38, D-35)
   - _Requirements: 8.1–8.3_
 - [ ] 11. F26 Costume Kit
   - _Requirements: 12.1–12.6_

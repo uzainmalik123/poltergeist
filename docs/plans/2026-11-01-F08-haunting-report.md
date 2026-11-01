@@ -1,4 +1,6 @@
-# F07 Verdicts + F08 Haunting Report Implementation Plan
+# F08 Haunting Report Implementation Plan
+
+> **Note (2026-11-01):** this plan was written for F07 and F08 together. `main`'s own F07 (PR #8, `computeVerdicts`, D-34) merged first, so Task 1 was dropped, and Tasks 2–4 consume `computeVerdicts`'s record instead of `decideVerdicts` (see D-35's notes).
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 

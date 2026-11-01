@@ -41,6 +41,7 @@
 | D-32 | F05 compiler rulings (extends D-03, D-04, D-15): fixture-first before the spike, no DSL `literal`, deterministic route picking, compiler-stamped plan fields, two-pass validation, injected `LlmClient`, cache key incl. persona hash | Accepted |
 | D-33 | F06 runner rulings (extends D-06, D-18, D-22): fixture-first, injected browser, raw per-rep results for F07, conflict-key scheduling instead of seed partitioning, shared-session Doppelgänger, same inputs every rep, rendezvous barrier, context-route holds, leak aborts the run, overlay in a closed shadow root, login traces dropped | Accepted |
 | D-34 | F07 verdict rulings (extends D-06): pure `computeVerdicts`, N = requested reps, same assertion = plan index, only `failure: 'app'` counts, forbidden blocks void a rep, `clean` needs ⌈2N/3⌉ clean reps, `uncompilable` rolls up as `inconclusive`, KI-37 timeout/attribution fixes folded in | Accepted |
+| D-35 | F08 report rulings (extends D-14): pure render + atomic two-file write, fix-ready haunted tasks, 300-line hard cap with JSON overflow, versioned JSON schema, draft wordmark and glyphs in core until F26, fixture-first Done-when | Accepted |
 
 ---
 
@@ -405,3 +406,32 @@
 - **Implementation notes (2026-11-01):** the in-flight step at a plan timeout is recorded as `timeout` ("plan exceeded N ms"), not the `failed` "Target page closed" the context close used to leave; upgrade-only attribution lives in `markBlockedByRule` (runner/actor.ts). `computeVerdicts` also throws on a duplicate input pair.
 - **Consequences:** design §4 gains the verdict types; F08 renders `reason` and `evidence`; F14 diffs `verdicts.json` by `criterion` and `persona`.
 
+### D-35: F08 report rulings (extends D-14)
+- **Context:** grilling F08 (2026-11-01). F10 (Candy Swap), F26 (Costume Kit) and F09 don't exist yet. The user asked to accept the recommended answers. F08 was first built alongside a parallel F07; `main`'s F07 (PR #8, D-34) landed first and is the one F08 consumes.
+- **Decision:**
+  - **API:** `renderReport(input)` → `{ markdown, json }` is pure. `writeReport(specDir, rendered)` writes only `haunting-report.md` and `haunting-report.json`, each through a temp file and a rename, so every run regenerates them whole (Req 8.1, 8.3). Both are in `packages/core/src/report/`.
+  - **Input:** the spec's criteria, `computeVerdicts`'s output (D-34), the compiled pairs (for plans), and run metadata `{ runId, runDir, target, reps, model, startedAt }`. Artifact paths are made relative to the spec folder with POSIX separators.
+  - **Markdown order (THEME §5):**
+    - the wordmark in a ```` ```text ```` block;
+    - a counts line;
+    - a board listing every criterion with its verdict glyph (`[  ]` for one that wasn't run);
+    - one **fix-ready task** per haunted criterion (`[!!] 3.2 — <text>`), with the promise and its `requirements.md` line, then for each haunted persona: numbered steps in plain words (a `fill` names its generator, never a value), expected vs actual for each failing assertion, "failed k/N reps", and artifact paths;
+    - a shorter section per flaky criterion;
+    - one line per inconclusive or uncompilable pair, with its reason.
+  - **Untrusted text** (criterion text, assertion details, app strings) is flattened to one line, capped at 200 characters, and wrapped in a backtick-safe code span where it's a value. The theme is only the header and glyphs. The facts stay in plain words.
+  - **Size:** a hard cap of 300 lines. Over budget, content is dropped in this order: inconclusive lines, then flaky sections, then haunted sections from the end. A closing note points to `haunting-report.json`, which always has everything.
+  - **JSON:** a versioned zod schema (`version: 1`), exported for F11's MCP tools. It holds run meta, counts, and criteria → pairs → evidence. It's deterministic: the only timestamps come from the input.
+  - **Costume:** core holds the verdict glyph table and THEME §4's draft wordmark as defaults, and `renderReport` takes a `wordmark` override. When F26 lands, the CLI passes the Costume Kit's wordmark (KI-40).
+  - **Done-when (fixture-first, like D-30/D-32/D-33):** a test runs the claims fixture's Doppelgänger race through `runPlans` → `decideVerdicts` → `renderReport`/`writeReport`. Then a fresh Claude Code subagent, given only the report, locates and reproduces the haunted criterion. The Kiro and real Candy Swap check is KI-38.
+- **Implementation notes (2026-11-01):**
+  - The JSON also records `truncated`: how many markdown items the cap dropped.
+  - Each failing assertion keeps its `expected` text.
+  - Single-actor plans label their steps "Steps:"; two-actor plans use "Actor a:" and "Actor b:".
+  - At most 6 artifact paths per pair go in the markdown. The rest are in the JSON.
+  - The artifact list says its paths are relative to the report's folder (from the agent check, KI-38).
+  - `writeReport` writes the JSON before the markdown.
+  - **On D-34's record:** "Actual" shows each failing assertion's failure count and its last detail; F07 keeps one detail per assertion, not one per rep. The pair's `failedReps` are listed. Artifacts come from `evidence`. The inconclusive line is F07's `reason` plus the first rep note (the error text).
+- **Review fixes (2026-11-01):**
+  - The 300-line cap never drops the first haunted section before the board. A hard cut with the JSON pointer is the last resort.
+  - Pairs show `failed k/N reps (only r ran)` when reps are missing, plus a "Run notes" line (or an inline note when flaky) with F07's rep notes.
+- **Consequences:** F09 calls `writeReport` after every run and prints its own board. F11's `get_haunting_report` reads the JSON schema.
