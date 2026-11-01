@@ -9,7 +9,7 @@
 - **Priority:** `High` = without it there is no working product, no demo or no costume. `Med` = makes it competitive. `Low` = only if time allows.
 - **Order of work:** follow the **Build order** column, not the IDs. It finishes every High feature before any Med. IDs are kept stable from the prototype so that decisions (`D-xx`) and issues (`KI-xx`) still point at the right feature.
 - **Scopes don't overlap.** Each feature has an **Owns** line. Anything not listed there belongs to the feature named under **Not this feature**. If you find yourself building something another feature owns, stop and move the work there.
-- **Rebuilt, not copied.** F01–F03 were built once in the prototype (`../poltergeist-old`, before the hacking window). Here they're rebuilt from these docs, not ported (D-25). Each of those features lists its **Prototype lessons**.
+- **Rebuilt, not copied.** F01–F03 were built once in the prototype (`../../../poltergeist-old`, before the hacking window). Here they're rebuilt from these docs, not ported (D-25). Each of those features lists its **Prototype lessons**.
 - When a feature's status changes, update the table **and** the feature section, and add a line to the changelog at the bottom.
 
 ## Status board

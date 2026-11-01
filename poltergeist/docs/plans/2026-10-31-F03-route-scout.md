@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- Fresh code only (D-25). Never open `../poltergeist-old`.
+- Fresh code only (D-25). Never open `../../../poltergeist-old`.
 - Contexts come only from `newGuardedContext(browser, { allowedHosts: loaded.allowedHosts, forbidden: loaded.config.forbidden, onBlocked }, extra?)` (D-18). The caller launches Chromium with `guardLaunchOptions()`; tests do the same.
 - One context per identity, opened one at a time: `anonymous` (only if some route has `auth: false`) first, then each account in order of first use in `config.routes`. `auth: true` means account `"default"`.
 - `storageState` stays in memory. Nothing Scout writes may contain a session cookie value or a password (Req 3.3).

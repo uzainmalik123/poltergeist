@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- Fresh code only (D-25). Never open `../poltergeist-old`.
+- Fresh code only (D-25). Never open `../../../poltergeist-old`.
 - Versions pinned exactly (`npm i -E`). Update STACK.md's "Installed here?" column.
 - `npm run health` must stay green after every task (D-19). Browser tests need Chromium (`npx playwright-core install chromium`).
 - Allowlist defaults `localhost`, `127.0.0.1`, `::1`; `allowedHosts` extends, never replaces (D-05). Bare `*` rejected.

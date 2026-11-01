@@ -10,7 +10,7 @@ The same rules hold in every place Poltergeist shows up: the CLI, `haunting-repo
 
 ### Borrowed from Reanimator, and what's different
 
-The neighbouring Reanimator project (`../reanimator/prototypes/opening/`) has a strong look. We borrow its *method* and keep our *costume* distinct, so the two entries never look alike.
+The neighbouring Reanimator project (`../../../reanimator/prototypes/opening/`) has a strong look. We borrow its *method* and keep our *costume* distinct, so the two entries never look alike.
 
 | | Reanimator | Poltergeist |
 |---|---|---|

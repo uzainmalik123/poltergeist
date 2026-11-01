@@ -15,7 +15,7 @@
 - Versions pinned exactly (no `^`), as listed in STACK.md. Mark them `Installed here? yes` in STACK.md.
 - `npm run health` = `npm run typecheck && npm run lint && npm test` (D-19).
 - CI: GitHub Actions on Node 22, on push to `main` and on PRs. Steps are `npm ci`, then `npm run health` (no Chromium step until browser tests exist). No secrets.
-- No code from `../poltergeist-old` (D-25). The LLM is never used for parsing (D-03, Req 1.5).
+- No code from `../../../poltergeist-old` (D-25). The LLM is never used for parsing (D-03, Req 1.5).
 - Content never throws. Only a missing or unreadable file throws `SpecNotFoundError` (Req 1.7, 1.8).
 - Parse 200 criteria in < 200 ms.
 - Tests live in `packages/core/test/`, mirroring `src/`. Each module exports through its folder's `index.ts`.
@@ -171,7 +171,7 @@ packages/core/test/...            mirrors src; fixtures in test/fixtures/spec/<n
 
 **Files:**
 - Create: `packages/core/src/spec/read.ts`
-- Create: `packages/core/test/fixtures/spec/reanimator/{requirements.md,NOTICE}` (copied from `../reanimator/.kiro/specs/reanimator/requirements.md`. NOTICE gives the MIT licence, `Copyright (c) 2026 Lanz Skyler B. Busa`, and the source path)
+- Create: `packages/core/test/fixtures/spec/reanimator/{requirements.md,NOTICE}` (copied from `../../../reanimator/.kiro/specs/reanimator/requirements.md`. NOTICE gives the MIT licence, `Copyright (c) 2026 Lanz Skyler B. Busa`, and the source path)
 - Create: `packages/core/test/fixtures/spec/candy-swap-draft/requirements.md` (hand-written Kiro-style draft: ≥ 5 requirements for a candy marketplace with login, listing, swap offer, accept and inventory, using WHEN, IF/THEN, WHILE and a freeform item)
 - Create: `packages/core/test/fixtures/spec/messy/requirements.md` (duplicate N, bullets, `Requirement #3`, `Requirement 1a`, a second list, a blockquote, a criterion without SHALL, `IF-Match`, a code block in a criterion)
 - Test: `packages/core/test/spec/read.test.ts`, `packages/core/test/spec/fixtures.test.ts`

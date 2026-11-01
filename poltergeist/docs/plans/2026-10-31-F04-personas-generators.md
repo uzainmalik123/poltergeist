@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- Fresh code only (D-25). Never open `../poltergeist-old`.
+- Fresh code only (D-25). Never open `../../../poltergeist-old`.
 - Versions pinned exactly (`npm i -E`). Update STACK.md's "Installed here?" column.
 - `npm run health` stays green after every task (D-19).
 - Personas are plain data, and generators are pure functions (PRD F04). Nothing reads `Math.random`, `Date` or global state.
