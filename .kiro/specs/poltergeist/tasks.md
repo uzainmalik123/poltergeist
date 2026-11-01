@@ -21,7 +21,7 @@ Work happens one PRD feature at a time, through the grill → plan → implement
   - _Requirements: 5.1–5.6_
 - [x] 8. F06 Ghost Runner (fixture; real Candy Swap check pending, KI-36; built before F10, D-33)
   - _Requirements: 6.1–6.8, 2.5, 2.7_
-- [ ] 9. F07 Verdicts & Flake Filter
+- [x] 9. F07 Verdicts & Flake Filter (D-34)
   - _Requirements: 7.1–7.4_
 - [ ] 10. F08 Haunting Report
   - _Requirements: 8.1–8.3_

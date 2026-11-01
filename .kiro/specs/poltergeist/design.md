@@ -78,7 +78,8 @@ type Persona = { id: PersonaId; name: string; tagline: string; behaviour: string
                  generators: GeneratorId[]; actors: 1 | 2; sprite: string };   // D-31: sprite is a Costume Kit key
 type GeneratorId = 'plain' | 'naughty' | 'emoji' | 'rtl' | 'long' | 'empty' | 'whitespace' | 'fastcheck';      // D-31
 // STEP_TYPES (the §6 step list) and both id lists live in core/personas; F05 builds its zod enums from them.
-type PairVerdict = 'haunted' | 'flaky' | 'inconclusive' | 'clean' | 'notApplicable' | 'uncompilable';
+type PairVerdict = 'haunted' | 'flaky' | 'inconclusive' | 'clean' | 'notApplicable' | 'uncompilable';      // D-34
+type CriterionVerdict = Exclude<PairVerdict, 'uncompilable'>;   // rollup: haunted > flaky > inconclusive > clean, notApplicable ignored, uncompilable → inconclusive
 type BlockReason = 'host' | 'forbidden' | 'scheme' | 'redirect' | 'leak';                                  // D-18, D-22
 type RouteScout = { path: string; slug: string; identity: string;                                          // D-20, D-21, D-30
                     status: 'ok' | 'redirected' | 'unreachable' | 'authFailed'; reason?: string; finalPath?: string;
@@ -148,7 +149,7 @@ Sprites are defined in `@poltergeist/costume` (`docs/THEME.md` §4).
 
 `run.started` · `scout.route` · `plan.compiled` · `rep.started {rep}` · `reset.finished {rep, ok, durationMs, error?}` · `ghost.spawned` · `ghost.step {ghostId, step, x?, y?}` · `ghost.frame {ghostId, jpegBase64}` (≤ 4 fps per ghost) · `guard.blocked {ghostId, reason, url}` · `assert.result` · `rep.finished {rep, outcomes}` · `verdict.pair` · `verdict.criterion` · `run.finished`. Every event carries `t` (epoch ms).
 
-The runner (F06) emits the `rep.*`, `reset.*`, `ghost.*`, `guard.*` and `assert.*` events through `runPlans(browser, loaded, plans, { sessions, outDir?, reps?, seed?, frameFps?, concurrency?, signal?, onEvent? })` (`packages/core/src/runner/`, D-33); the orchestrator (F09) owns `run.*`, `scout.*` and `plan.*` and the WebSocket. `ghostId` is `<criterion>__<persona>__r<rep>__<actor>`. Every event except frames is appended to `events.ndjson`. Frames are sampled to disk for replay. The Séance turns frames into glyphs client-side (F26); the run folder keeps real JPEGs.
+The runner (F06) emits the `rep.*`, `reset.*`, `ghost.*`, `guard.*` and `assert.*` events through `runPlans(browser, loaded, plans, { sessions, outDir?, reps?, seed?, frameFps?, concurrency?, signal?, onEvent? })` (`packages/core/src/runner/`, D-33); the orchestrator (F09) owns `run.*`, `scout.*` and `plan.*` and the WebSocket. `ghostId` is `<criterion>__<persona>__r<rep>__<actor>`. Verdicts (F07) come from the pure `computeVerdicts(pairs, runResult)` → `{ reps, threshold, pairs, criteria, counts }` (`packages/core/src/verdicts/`, D-34); F09 emits `verdict.pair` and `verdict.criterion` from it and writes it as `verdicts.json`. Every event except frames is appended to `events.ndjson`. Frames are sampled to disk for replay. The Séance turns frames into glyphs client-side (F26); the run folder keeps real JPEGs.
 
 ## 9. Run folder
 
@@ -162,7 +163,7 @@ The runner (F06) emits the `rep.*`, `reset.*`, `ghost.*`, `guard.*` and `assert.
     events.ndjson
     frames/<ghostId>/<seq>.jpg
     artifacts/<criterion>__<persona>__rep<k>/{screenshot-<actor>.png,trace-<actor>.zip}   failed reps only; no trace for an actor that started from a session or ran a login step (secrets)
-    verdicts.json
+    verdicts.json       computeVerdicts() output (D-34); F14 diffs it by criterion + persona
 ```
 
 ## 10. MCP tools

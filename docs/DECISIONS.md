@@ -402,5 +402,6 @@
   - **Record:** each pair carries `verdict`, a plain one-line `reason` (no theme words; F08 owns wording), per-assertion failure counts with the last failing detail, `failingAssertion` (lowest index with the highest count), `failedReps`, rep `outcomes` counts, `evidence` (artifacts of reps with counted failures) and `notes`.
   - **Tests:** table tests for every path plus fast-check properties (determinism, order independence, an extra app failure never lowers severity).
   - **Folded in from KI-37:** a plan timeout aborts the pair's actors through a per-pair signal and snapshots `steps`, with no `ghost.step` after it; a late guard report only upgrades a step from `ok`; the rep error prefers an actor whose end isn't a broken barrier.
+- **Implementation notes (2026-11-01):** the in-flight step at a plan timeout is recorded as `timeout` ("plan exceeded N ms"), not the `failed` "Target page closed" the context close used to leave; upgrade-only attribution lives in `markBlockedByRule` (runner/actor.ts). `computeVerdicts` also throws on a duplicate input pair.
 - **Consequences:** design §4 gains the verdict types; F08 renders `reason` and `evidence`; F14 diffs `verdicts.json` by `criterion` and `persona`.
 

@@ -45,7 +45,7 @@
 | KI-34 | F05 Done-when (≥ 80% valid or justified `notApplicable`, live LLM) not yet run against the real Candy Swap; KI-01 spike re-scoped to use F05 | Major | F05 sign-off, KI-01 spike | Open |
 | KI-35 | F05 review minors: cache/plan write failure loses paid results, duplicate persona ids, prompt changes not in the cache key (title, snapshot, manual `PROMPT_VERSION`), same path under two identities, unstated prompt limits, backslash `api` paths, theme words via user/app content | Minor | F06, F09 | Open |
 | KI-36 | F06 Done-when (12 ghosts on real Candy Swap in < 5 min) not yet run against the real Candy Swap (built against a fixture, D-33) | Major | F06 sign-off | Open |
-| KI-37 | F06 review minors: plan timeout doesn't stop actors (late steps and events), `ghost.step` vs late `blocked-by-rule`, rep error names the broken-barrier actor, a 2-actor plan exceeds `concurrency: 1`, assertions after a leak abort, unredacted URL on `RunnerSafetyError`, screencast frames dropped in Node, small cleanups | Minor | F07, F09, F12 | Open |
+| KI-37 | F06 review minors: plan timeout doesn't stop actors (late steps and events), `ghost.step` vs late `blocked-by-rule`, rep error names the broken-barrier actor, a 2-actor plan exceeds `concurrency: 1`, assertions after a leak abort, unredacted URL on `RunnerSafetyError`, screencast frames dropped in Node, small cleanups | Minor | F09, F12 | Open (timeout, attribution and rep error fixed 2026-11-01, F07) |
 
 ---
 
@@ -400,4 +400,5 @@
 - **Frames:** every screencast frame is acked and decoded in Node, then dropped to ≤ 4 fps. With 20 contexts that is real CDP load (KI-08). Use `everyNthFrame` or pace the acks.
 - **Cleanups:** `keepEvidence` can leave an empty artifacts folder when every trace was dropped; `applyThrottle` never detaches its CDP session.
 - **Next action:** fix the timeout and attribution items with F07 (it consumes these results); frames with F12.
+- **2026-11-01 (F07, D-34):** fixed the **timeout** item (a per-pair abort stops actors at their next step, `steps` is a copy, the step in flight is recorded as `timeout` / "plan exceeded N ms" and emits no `ghost.step`), the **attribution** item (`markBlockedByRule` only upgrades a step from `ok`) and the **errors** item (the rep error prefers an actor whose end isn't a broken barrier). F07 also voids a rep on any `forbidden` guard report, so verdicts don't depend on step attribution. Still open: concurrency (F09), leak (assertions after abort, raw URL on `RunnerSafetyError`), frames (F12), cleanups.
 
