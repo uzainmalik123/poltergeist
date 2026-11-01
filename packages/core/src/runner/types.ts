@@ -82,7 +82,7 @@ export type RunEvent = { t: number } & (
   | { type: 'rep.finished'; rep: number; outcomes: Record<RepOutcome, number> }
 );
 
-type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
+export type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
 
 export type RunEventInput = DistributiveOmit<RunEvent, 't'>;
 
