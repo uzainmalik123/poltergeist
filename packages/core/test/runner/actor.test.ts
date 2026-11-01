@@ -152,6 +152,18 @@ describe('runActor', () => {
     expect(fixture.arrivals().length).toBe(before + 1);
   });
 
+  it('stops before the next step once the run is aborted', async () => {
+    const e = await env();
+    const ac = new AbortController();
+    const { done } = startActor([{ goto: '/claims' }, { wait: 300 }, { goto: '/form' }], { ...e, signal: ac.signal });
+    await new Promise((r) => setTimeout(r, 150));
+    ac.abort(new Error('leak'));
+    const run = await done;
+    expect(run.end).toBe('failed');
+    expect(run.error).toMatch(/aborted/);
+    expect(run.steps.map((s) => s.type)).toEqual(['goto', 'wait']);
+  });
+
   it('exposes the in-flight step while running', async () => {
     const e = await env();
     const { run, done } = startActor([{ goto: '/claims' }, { wait: 300 }], e);

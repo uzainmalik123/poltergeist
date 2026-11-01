@@ -54,8 +54,7 @@ type Shared = {
   fps: number;
   stepTimeoutMs: number;
   planTimeoutMs: number;
-  /** Contexts in use, closed at once if the run must stop. */
-  live: Set<BrowserContext>;
+  signal: AbortSignal;
   onLeak(b: BlockedRequest): void;
 };
 
@@ -90,12 +89,13 @@ export async function runPlans(browser: Browser, loaded: LoadedConfig, plans: re
     fps,
     stepTimeoutMs: opts.stepTimeoutMs ?? STEP_TIMEOUT_MS,
     planTimeoutMs: opts.planTimeoutMs ?? PLAN_TIMEOUT_MS,
-    live: new Set(),
+    signal: stop.signal,
     onLeak(b) {
       if (leak) return;
       leak = b;
+      // Actors stop at their next step. Closing contexts from inside the guard's callback races
+      // Playwright's own dispatch ("object was not bound"), so contexts close in runPair's finally.
       stop.abort(new RunnerSafetyError(b));
-      for (const c of shared.live) void c.close().catch(() => undefined);
     },
   };
 
@@ -207,7 +207,6 @@ async function runPair(plan: HauntingPlan, rep: number, s: Shared): Promise<Pair
         { allowedHosts: loaded.allowedHosts, forbidden: loaded.config.forbidden, onBlocked },
         storageState ? { storageState } : {},
       );
-      s.live.add(context);
       const holds = await installHolds(context, origin);
       await installOverlay(context);
       if (s.opts.outDir) await context.tracing.start({ screenshots: true, snapshots: true });
@@ -234,6 +233,7 @@ async function runPair(plan: HauntingPlan, rep: number, s: Shared): Promise<Pair
         barriers,
         seed,
         stepTimeoutMs: s.stepTimeoutMs,
+        signal: s.signal,
         onStep: (r, xy) => sink.emit({ type: 'ghost.step', ghostId: a.ghost, index: r.index, step: r.type, outcome: r.outcome, ...xy }),
       });
       a.run = started.run;
@@ -285,7 +285,6 @@ async function runPair(plan: HauntingPlan, rep: number, s: Shared): Promise<Pair
   } finally {
     for (const a of actors) {
       await a.stopFrames?.();
-      s.live.delete(a.context);
       await a.context.close().catch(() => undefined);
     }
   }

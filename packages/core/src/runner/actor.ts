@@ -21,6 +21,8 @@ export type ActorEnv = {
   seed: number;
   stepTimeoutMs: number;
   onStep(r: StepResult, xy?: { x: number; y: number }): void;
+  /** The run was stopped (a leak or the caller): no further step starts. */
+  signal?: AbortSignal;
 };
 
 export type ActorRun = {
@@ -121,6 +123,11 @@ export function startActor(steps: readonly Step[], env: ActorEnv): { run: ActorR
   const done = (async () => {
     try {
       for (const [index, step] of steps.entries()) {
+        if (env.signal?.aborted) {
+          run.end = 'failed';
+          run.error = 'run aborted';
+          break;
+        }
         const result: StepResult = { actor: env.actor, index, type: stepType(step), outcome: 'ok', startedAt: now(), durationMs: 0 };
         run.steps.push(result);
         const t = performance.now();
