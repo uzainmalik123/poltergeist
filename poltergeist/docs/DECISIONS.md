@@ -44,7 +44,8 @@
 | D-35 | F08 report rulings (extends D-14): pure render + atomic two-file write, fix-ready haunted tasks, 300-line hard cap with JSON overflow, versioned JSON schema, draft wordmark and glyphs in core until F26, fixture-first Done-when | Accepted |
 | D-36 | F09 CLI rulings (extends D-17, D-35): fixture-first until F10/F26, `summon()` in core with a thin `@poltergeist/cli`, `parseArgs` flags, exit 0/1/2/130, run folder next to the config, live ghost block only on a colour TTY, loopback `--seance` event server with replay, KI-35/KI-41 fold-ins | Accepted |
 | D-37 | F10 prep rulings (extends D-10, D-01): Kiro builds Candy Swap, we ship only a brief, its Poltergeist config and `npm run candy:check`; URL/script/seed contract; standalone package; bug-neutral prompt | Accepted |
-| D-38 | Poltergeist becomes the headless red-team **engine inside Reanimator**; the entry is Reanimator/Frankenstein; standalone UI (F12 Séance) and costume (F26) are deprioritised | Accepted |
+| D-38 | F11 MCP server rulings (extends D-36, D-01): five snake_case tools, long-poll runs (`waitMs` ≤ 100 s, `get_run_status`), one run per process, 6 000-char results, root-confined paths, `rehaunt` without diff until F14, SDK 1.32.2, fixture Done-when (KI-46) | Accepted |
+| D-39 | Poltergeist becomes the headless red-team **engine inside Reanimator**; the entry is Reanimator/Frankenstein; standalone UI (F12 Séance) and costume (F26) are deprioritised | Accepted |
 
 ---
 
@@ -492,8 +493,56 @@
   - Deferred minors are in KI-45.
 - **Consequences:** F10 stays open until the Kiro build lands (KI-44). Then `candy:check` is its Done-when, and KI-30/34/36/38/42 follow. If Kiro picks other URLs, the config changes, not the app.
 
+### D-38: F11 MCP server rulings (extends D-36, D-01)
+- **Context:** grilling F11 (2026-11-01) in Claude Code, without Kiro. Kiro's docs were researched for KI-06 and KI-12 (`docs/kiro-notes.md`). The user asked to accept the recommended answers.
+- **Decision:**
+  - **Long-poll, not one blocking call (resolves KI-12).**
+    - `summon_ghosts` and `rehaunt` start the run in the background and wait up to `waitMs` (default 50 000, max 100 000).
+    - Each returns the final summary if the run finished in that time, otherwise `{runId, status: 'running', progress}`.
+    - `get_run_status {runId, waitMs?}` waits the same way.
+    - Kiro's per-call `requestTimeout` is reportedly 120 s and unverified for the IDE, so no call is designed to outlive it.
+  - **Five tools:** `list_criteria`, `summon_ghosts`, `get_run_status`, `get_haunting_report` and `rehaunt`. All are snake_case, as Kiro's tool-name rule requires (`^[a-zA-Z][a-zA-Z0-9_]*$`).
+  - **One active run per server process.** A second start returns `isError` naming the active `runId`. The last 20 settled runs stay queryable.
+  - **Agent-sized results (Req 10.2):**
+    - compact JSON or markdown as text content, hard-capped at 6 000 chars;
+    - haunted and flaky ids capped at 20, then `+N more`;
+    - `list_criteria` text clipped to 200 chars, dropping trailing rows with a `truncated` count when needed;
+    - no `structuredContent`.
+    - Artifact *paths* may appear (the report lists them, and the agent reads the same `haunting-report.md` directly, design §11). Artifact content never does.
+  - **`get_haunting_report`:**
+    - without `criterion`: the header and `## Board`;
+    - with `criterion`: that criterion's markdown section, or a short per-persona summary from `haunting-report.json` when the markdown has none (clean, or trimmed);
+    - no report yet → `NoReportError` telling the agent to call `summon_ghosts`.
+  - **`rehaunt`** is `summon` with `only: ids` and the same result shape. It has **no diff**: F14 owns that. Unknown ids are rejected before anything starts.
+  - **Paths and safety:**
+    - The bin takes `--root <dir>` (default cwd), because Kiro's `cwd` field isn't documented.
+    - `specDir` and `configPath` resolve against root and must stay inside it (`PathError`).
+    - An omitted `configPath` is the nearest `poltergeist.config.json` from `specDir` up to root.
+  - **Errors** are `isError` results (`<Error name>: <message>`). Handlers never throw.
+  - **Logs** go to stderr only, since stdout is the protocol.
+  - **Shutdown:** stdin close, SIGINT or SIGTERM aborts the active run, then the server closes.
+  - **Package:**
+    - `@poltergeist/mcp`, bin `poltergeist-mcp`, run from source through tsx like the CLI (KI-33);
+    - `@modelcontextprotocol/sdk` 1.32.2 pinned (stable 1.x, `registerTool` takes zod 4);
+    - `createServer(deps)` takes an injectable `summon`, `llm`, `launch` and `runOptions`.
+  - **Kiro wiring:**
+    - `integrations/kiro/mcp.json` is the template: `${ANTHROPIC_API_KEY}` interpolation, with the three read-only tools auto-approved;
+    - nothing is written into `fixtures/candy-swap/` (D-37) or a target's `.kiro/` (F13).
+  - **Done-when (fixture):**
+    - an in-process SDK client runs list → summon → report → rehaunt on the claims fixture with a fake LLM;
+    - a spawned-stdio test checks `tools/list` through the real bin;
+    - the real Kiro loop on Candy Swap is KI-46.
+- **Review fixes (2026-11-01):**
+  - **Symlinks can't escape root.** `resolveInside` checks the path as written and after following symlinks (the realpath of its longest existing prefix). A config found by the upward search goes through the same check, because the run folder lives next to it.
+  - **The template runs `node <absolute bin>` with an absolute `--root`.** `npx poltergeist-mcp` would resolve from public npm outside this repo, and Kiro's non-TTY spawn would auto-install whatever holds that name, with the API key in its env. `--root .` would depend on the undocumented spawn cwd. A test pins both.
+  - Deferred minors are in KI-48.
+- **Consequences:**
+  - F13 installs `integrations/kiro/mcp.json`, filling both absolute paths.
+  - F14 adds the verdict diff to `rehaunt`, and should merge subset results into the full report (KI-47).
+  - F18 bundles the same server.
+  - If Kiro proves to honour long `requestTimeout`s, the default `waitMs` can go up.
 
-### D-38: Poltergeist is the headless engine inside Reanimator (supersedes D-23)
+### D-39: Poltergeist is the headless engine inside Reanimator (supersedes D-23)
 - **Context (2026-11-01):** the team merged Poltergeist with the teammate's **Reanimator** concept into one Kiroween entry, built in this repo (the eligible one). The repo was split into two sibling projects: `reanimator/` (the product and all UI/art) and `poltergeist/` (this engine). See the repo-root `AGENTS.md` and `reanimator/docs/`.
 - **Decision:**
   - The submission is **Reanimator**, in **Frankenstein** (a mash-up). Poltergeist is a component, not a separate entry. This supersedes D-23 (Costume Contest) and, with it, D-02.
