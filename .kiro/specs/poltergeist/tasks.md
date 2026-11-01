@@ -27,7 +27,7 @@ Work happens one PRD feature at a time, through the grill → plan → implement
   - _Requirements: 8.1–8.3_
 - [ ] 11. F26 Costume Kit
   - _Requirements: 12.1–12.6_
-- [ ] 12. F09 CLI `summon`
+- [x] 12. F09 CLI `summon` (fixture; real Candy Swap check pending, KI-42, D-36)
   - _Requirements: 9.1, 9.2_
 - [ ] 13. F11 Kiro MCP Server
   - _Requirements: 10.1, 10.2_

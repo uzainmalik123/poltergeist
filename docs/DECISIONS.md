@@ -449,5 +449,11 @@
   - **`--seance`:** a `ws` server on `127.0.0.1:6660` at `/runs/<runId>`, started only with the flag and before scouting. It broadcasts every event, frames included, and replays the buffered non-frame events to clients that join late. The Séance page itself (`:6661`) is F12's.
   - **Fold-ins:** KI-41 markdown injection and bidi/invisible escaping in the report (before F09 writes real reports). KI-35: cache and plan writes are best-effort, and duplicate persona ids are rejected. KI-37: a 2-actor plan at `concurrency: 1` gets a warning (the runner clamps).
   - **Done-when (fixture):** an in-process `main(argv, deps)` test runs `summon` end to end on the claims fixture with a fake LLM and checks exit 1, the board, the report and the run folder. Spawned-binary tests check `--help` and that a bad config exits 2.
+- **Implementation notes (2026-11-01):**
+  - `createEventSink` is generic over the event union, so `summon()` writes its events into the runner's `events.ndjson` (flushed before `runPlans` starts and after it ends, so lines never interleave).
+  - `--personas` duplicates are dropped by `summon()`; `compile()` itself rejects them (`RangeError`).
+  - `oneLine` now makes controls, bidi controls and invisible characters visible as `\uXXXX` everywhere (report and terminal), and a new `mdText` escapes markdown outside code spans.
+  - The terminal shows one line per scouted route and one per rep. Without colour there are no per-step lines. On a colour TTY, `LiveBlock.log` prints phase lines above the live ghost block.
+  - The event server closes clients gracefully (code 1001), so `run.finished` reaches them.
 - **Consequences:** F11 and F12 call core's `summon()`. F14 adds the `--only` diff on top of `verdicts.json`. F26 replaces the CLI's draft wordmark and initials.
 

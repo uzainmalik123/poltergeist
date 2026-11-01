@@ -41,15 +41,15 @@
 | KI-30 | F03 Done-when has not yet been run against the real Candy Swap (built against a fixture, D-30) | Major | F03 sign-off, KI-01 spike | Open |
 | KI-31 | F03 rebuild review minors: label lookups before trim, capture calls without timeouts, sub-path session loss, reserved `anonymous` account name, standing alerts on login pages, login-time blocks not in any file, shadow-DOM testIds, case-only slug collisions | Minor | F05, F06 | Open |
 | KI-32 | Valid form fills may need typed inputs (numbers, emails, dates); DSL `literal` input vs D-04 unresolved | Minor | KI-01 spike, F04 follow-up | Open (`literal` dropped, D-32; typed generators open) |
-| KI-33 | F04 review minors: BLNS header rule fragile on upstream bumps, no `.gitattributes` for vendored data, `blns.txt` read from source path (packaging), RangeError checked before unknown id, try/catch `.id` assertions | Minor | F09 (packaging) | Open |
+| KI-33 | F04 review minors: BLNS header rule fragile on upstream bumps, no `.gitattributes` for vendored data, `blns.txt` read from source path (packaging), RangeError checked before unknown id, try/catch `.id` assertions | Minor | packaging (npm publish) | Open (F09 runs from source via tsx, so packaging is deferred) |
 | KI-34 | F05 Done-when (≥ 80% valid or justified `notApplicable`, live LLM) not yet run against the real Candy Swap; KI-01 spike re-scoped to use F05 | Major | F05 sign-off, KI-01 spike | Open |
-| KI-35 | F05 review minors: cache/plan write failure loses paid results, duplicate persona ids, prompt changes not in the cache key (title, snapshot, manual `PROMPT_VERSION`), same path under two identities, unstated prompt limits, backslash `api` paths, theme words via user/app content | Minor | F06, F09 | Open |
+| KI-35 | F05 review minors: cache/plan write failure loses paid results, duplicate persona ids, prompt changes not in the cache key (title, snapshot, manual `PROMPT_VERSION`), same path under two identities, unstated prompt limits, backslash `api` paths, theme words via user/app content | Minor | F06 | Open (writes and duplicate personas fixed 2026-11-01, F09) |
 | KI-36 | F06 Done-when (12 ghosts on real Candy Swap in < 5 min) not yet run against the real Candy Swap (built against a fixture, D-33) | Major | F06 sign-off | Open |
-| KI-37 | F06 review minors: plan timeout doesn't stop actors (late steps and events), `ghost.step` vs late `blocked-by-rule`, rep error names the broken-barrier actor, a 2-actor plan exceeds `concurrency: 1`, assertions after a leak abort, unredacted URL on `RunnerSafetyError`, screencast frames dropped in Node, small cleanups | Minor | F09, F12 | Open (timeout, attribution and rep error fixed 2026-11-01, F07) |
+| KI-37 | F06 review minors: plan timeout doesn't stop actors (late steps and events), `ghost.step` vs late `blocked-by-rule`, rep error names the broken-barrier actor, a 2-actor plan exceeds `concurrency: 1`, assertions after a leak abort, unredacted URL on `RunnerSafetyError`, screencast frames dropped in Node, small cleanups | Minor | F12 | Open (timeout, attribution and rep error fixed in F07; concurrency warned in F09) |
 | KI-38 | F08 Done-when (an agent reproduces a haunted Candy Swap criterion from the report alone, once with Kiro and once with Claude Code) not yet run on real Candy Swap or in Kiro | Major | F08 sign-off | Open |
 | KI-39 | Timeouts are `inconclusive` (D-34), so slow-device breakage (Lich: hidden buttons, timeouts) can never be `haunted` | Minor | F16 | Open |
 | KI-40 | The report uses core's draft wordmark and glyph table until F26 ships `@poltergeist/costume` | Minor | F26, F09 | Open |
-| KI-41 | F08 review minors: markdown/HTML in criterion text and plan strings outside code spans, bidi/invisible characters pass `oneLine`, flaky pairs under a haunted criterion hidden in markdown, orphan `.tmp` after a kill, non-atomic pair of files, long wordmark override, Windows cross-drive paths | Minor | F09, F11 | Open |
+| KI-41 | F08 review minors: markdown/HTML in criterion text and plan strings outside code spans, bidi/invisible characters pass `oneLine`, flaky pairs under a haunted criterion hidden in markdown, orphan `.tmp` after a kill, non-atomic pair of files, long wordmark override, Windows cross-drive paths | Minor | F11 | Open (injection and bidi fixed 2026-11-01, F09) |
 | KI-42 | F09 Done-when (`npm ci && npx playwright-core install chromium && npm run summon` on Candy Swap from a clean clone) not yet run: built against a fixture (D-36) | Major | F09 sign-off | Open |
 
 ---
@@ -370,7 +370,8 @@
 - **Packaging:** `naughty.ts` reads `data/blns.txt` via `import.meta.url`. That works from source (tsx, vitest), but breaks if F09's `npx poltergeist` is bundled or built to `dist/` without copying `data/`. Fix in F09: copy the asset, or generate a JSON module at build time.
 - **API:** `generate('bogus', -1, 0)` throws `RangeError` before `UnknownGeneratorError`. Swap the order if F05's error mapping cares.
 - **Tests:** the try/catch `.id` assertions in `generators.test.ts` and `registry.test.ts` would pass silently if nothing threw (the `toThrow` line above them covers it). Use `toThrow(expect.objectContaining({ id }))`.
-- **Next action:** fix the `.gitattributes` and count pin with the next naughty-strings change. Fix the packaging item in F09.
+- **Next action:** fix the `.gitattributes` and count pin with the next naughty-strings change. Fix the packaging item when the CLI gets a build or an npm publish.
+- **2026-11-01 (F09, D-36):** the `poltergeist` bin runs the TypeScript sources through tsx, so `import.meta.url` still finds `data/blns.txt`. Packaging stays open until there's a build step or a publish.
 
 ### KI-34: F05 Done-when not yet run live against Candy Swap · Major · Open
 - **Context:** F05 was built fixture-first (D-32): F10 isn't built, the KI-01 spike hasn't run, and no API key is available in dev sessions. Health tests use a fake `LlmClient`.
@@ -388,6 +389,7 @@
 - **Validation:** `api.path` like `/\evil.test/x` passes; URL resolution treats `\` as `/`. The D-18 guard blocks it at runtime; also reject `\` at compile time.
 - **D-09 scope:** criterion text and app snapshots go into prompts verbatim, so a Halloween-flavoured app or this repo's own spec can put theme words in a prompt. Our own framing stays clean (tested). Decide whether Req 5.6 means "our framing" and say so.
 - **Next action:** fix the write and duplicate-persona items when F09 wires `compile()` into `summon`; the rest when F06 consumes plans or the KI-34 live run shows them.
+- **2026-11-01 (F09, D-36):** fixed the **writes** item (a failed cache or plan write goes to `onWarning` and keeps the paid result; `writeCache` removes its `.tmp` on a failed rename) and the **inputs** item (`compile()` rejects duplicate persona ids, `summon()` dedupes `--personas`). Added `recompile` (skip cache reads). Still open: cache key gaps, prompt limits, backslash `api` paths, D-09 scope.
 - **2026-11-01 (F06):** the "same path under two identities" item is handled at run time: a plan runs as one identity (its first account), and two accounts make it a `planError` (D-33). The rest is still open.
 
 ### KI-36: F06 Done-when not yet run against the real Candy Swap · Major · Open
@@ -407,6 +409,7 @@
 - **Next action:** fix the timeout and attribution items with F07 (it consumes these results); frames with F12.
 - **2026-11-01 (F07, D-34):** fixed the **timeout** item (a per-pair abort stops actors at their next step, `steps` is a copy, the step in flight is recorded as `timeout` / "plan exceeded N ms" and emits no `ghost.step`), the **attribution** item (`markBlockedByRule` only upgrades a step from `ok`) and the **errors** item (the rep error prefers an actor whose end isn't a broken barrier). F07 also voids a rep on any `forbidden` guard report, so verdicts don't depend on step attribution. Still open: concurrency (F09), leak (assertions after abort, raw URL on `RunnerSafetyError`), frames (F12), cleanups.
 - **2026-11-01 (F07 final review, deferred minors):** `started.done.then(...)` in `runPair` has no rejection handler (unreachable today: nothing outside the step try/catch throws, and `sink.emit` swallows listener errors); `result.steps` is copied before assertions, so a `forbidden` report arriving during assertions no longer shows on the returned steps (verdicts unaffected: `blocked` stays live and voids the rep), so decide before F08/F12 render steps; exported `decidePair` doesn't validate duplicate/out-of-range reps (only `computeVerdicts` does); a completed rep with zero assertion results counts as clean (F05 rejects empty `assert`); at a timeout a step finishing in the same tick, or one marked `blocked-by-rule`, is relabelled `timeout`; the "not run" case has no distinct reason phrase (F08 can test `outcomes.missing === reps`).
+- **2026-11-01 (F09, D-36):** the **concurrency** item now gives a `summon()` warning ("concurrency 1: two-actor plans still open 2 contexts at once"); the runner still clamps. Still open: leak, frames (F12), cleanups.
 
 ### KI-38: F08 Done-when not yet run on real Candy Swap or in Kiro · Major · Open
 - **Context:** F08 was built fixture-first (D-35). F10 isn't built, and the report hasn't been handed to Kiro's agent yet.
@@ -447,6 +450,7 @@
   - A `wordmark` override longer than ~290 lines is hard-cut.
   - On Windows, a `runDir` on another drive gives an absolute path.
 - **Next action:** fix the injection and bidi items before F09 writes real reports, and the rest with F09 or F11.
+- **2026-11-01 (F09, D-36):** fixed the **injection** item (`mdText` escapes `` \ ` * _ [ ] < > # | `` in board lines, headings, intent, requirement title, model and expected text) and the **bidi** item (`oneLine` turns controls, bidi controls and invisible characters into visible `\uXXXX`, so code spans and the CLI board get it too). Still open: visibility, writes, edge cases (F11).
 
 ### KI-42: F09 Done-when not yet run on real Candy Swap · Major · Open
 - **Problem:** F09 was built against the claims fixture with a fake LLM (D-36), because F10 doesn't exist. PRD F09's Done-when is a full Candy Swap run from a clean clone with `npm ci && npx playwright-core install chromium && npm run summon`.
