@@ -144,7 +144,7 @@ Criterion IDs follow Kiro's convention (`N.M`, D-16), so Poltergeist's own Spec 
 
 #### Acceptance Criteria
 
-1. THE MCP_Server SHALL expose `list_criteria`, `summon_ghosts`, `get_haunting_report` and `rehaunt` over stdio.
+1. THE MCP_Server SHALL expose `list_criteria`, `summon_ghosts`, `get_run_status`, `get_haunting_report` and `rehaunt` over stdio.
 2. THE MCP_Server SHALL return small summaries (counts and haunted IDs) and SHALL NOT put artifacts into the agent's context.
 3. THE Installer SHALL write the MCP entry, a steering file and an agent hook into a target's `.kiro/`, and SHALL NOT overwrite existing files without `--force` [F13].
 4. THE Power SHALL bundle the MCP server and steering as an installable Kiro Power [F18].

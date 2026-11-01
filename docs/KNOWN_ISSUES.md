@@ -14,13 +14,13 @@
 | KI-03 | Choosing which route a criterion belongs to | Major | F03, F05 | Investigating (deterministic picker, D-32; measure in the spike) |
 | KI-04 | Candy Swap might not contain any interesting real bugs | Major | F10, demo | Open |
 | KI-05 | 2026 rules, tracks, deadline and "new projects only" are unconfirmed | Blocker | submission, D-02 | Open |
-| KI-06 | Kiro hook schema, MCP config location and Power format are not verified | Major | F11, F13, F18 | Open |
+| KI-06 | Kiro hook schema, MCP config location and Power format are not verified | Major | F13, F18 | Investigating (MCP facts in `docs/kiro-notes.md`, F11; hooks, Power, IDE `requestTimeout` and `cwd` open) |
 | KI-07 | Race windows may be too narrow to hit reliably | Major | F06 (Doppelgänger) | Investigating (found on the fixture, D-33; confirm on Candy Swap, KI-36) |
 | KI-08 | Frame streaming from 12 ghosts may be too heavy | Minor | F12 | Open |
 | KI-09 | Judges may not be able to run a live haunting themselves | Major | F15, F21 | Open |
 | KI-10 | Test-account and login handling for every persona | Major | F03, F06 | Open (Scout half solved in prototype, D-20) |
 | KI-11 | Possible LLM refusals or watered-down plans | Minor | F05 | Open |
-| KI-12 | MCP calls that run for a long time (minutes) may time out in the client | Major | F11 | Open |
+| KI-12 | MCP calls that run for a long time (minutes) may time out in the client | Major | F11 | Resolved (2026-11-01, long-poll, D-38) |
 | KI-13 | Resetting state between repetitions with concurrent ghosts | Major | F06 | Investigating (conflict-key scheduling, D-33; partitioning deferred) |
 | KI-14 | LLM cost and rate limits during development | Minor | F05 | Open |
 | KI-15 | Code written in this playtest repo may not count for the main submission | Major | everything | Resolved (2026-10-31, D-25) |
@@ -54,6 +54,8 @@
 | KI-43 | F09 review minors: more invisible characters (U+034F, U+115F, U+3164, tag characters…), live block garbles on wrap or short terminals, abort not re-checked during verdicts/report, API key read late and from `process.env`, no frame backpressure for slow `--seance` clients, no CLI test aborting mid-compile or mid-rep | Minor | F12, F11 | Open |
 | KI-44 | Candy Swap not yet built in Kiro: only the F10 prep kit exists (D-37) | Major | F10, KI-30/34/36/38/42, demo | Open |
 | KI-45 | F10 prep review minors: non-JSON dump gives no snippet, `db:dump` gets provider keys, unreadable spec crashes `candy:check`, no-op reset passes determinism, KI-30 note formatting | Minor | F10 | Open |
+| KI-46 | F11 Done-when (a Kiro session on Candy Swap runs summon → report → fix → rehaunt, haunted → clean) not yet run: built against a fixture (D-38) | Major | F11 sign-off | Open |
+| KI-47 | A `rehaunt` (subset) run rewrites `haunting-report.md`/`.json` with every other criterion as `notRun`, so the board loses the full picture | Minor | F14 | Open |
 
 ---
 
@@ -110,6 +112,7 @@
 - **Next action:**
   1. Before starting F11, F13 or F18, write the confirmed facts to `docs/kiro-notes.md` (hook triggers, hook file format, MCP settings path, Power manifest).
   2. Update SPEC §6.8.
+- **2026-11-01 (F11): Investigating.** `docs/kiro-notes.md` has the MCP facts from kiro.dev with sources: config paths and merge, fields, `${VAR}`, the tool-name regex and 64-char limit, transports. Still unverified: the hook format, the Power `plugin.json`, whether the IDE honours `requestTimeout` in `mcp.json`, and a `cwd` field. F13 and F18 must re-check these in a real Kiro session.
 
 ### KI-07: Race windows may be too narrow to hit · Major · Investigating
 - **Mitigation already in the design:** `barrier` + `holdRequests`/`releaseRequests` (SPEC R6.3–R6.4).
@@ -159,6 +162,7 @@
   - (b) Progress notifications.
   - (c) The default call runs a small subset, e.g. haunted-only or `--reps 1`.
 - **Next action:** check Kiro's MCP timeout (KI-06), then choose. (a) is the safe default.
+- **2026-11-01 (F11): Resolved** with a variant of (a), long-poll (D-38). The run tools wait up to `waitMs` (default 50 s, max 100 s) and return the result, or `status: 'running'` for `get_run_status`. Kiro's `requestTimeout` (reportedly 120 s) is still unverified for the IDE (KI-06). Check it during KI-46.
 
 ### KI-13: Resetting state between repetitions · Major · Open
 - **Problem:** `resetCommand` between repetitions is easy when repetitions run one after another. But plans run concurrently *within* a repetition and can interfere with each other (e.g. two different plans claiming the same candy).
@@ -485,4 +489,12 @@
 - **No-op reset:** two back-to-back resets with nothing in between pass determinism even if `db:reset` does nothing. The brief's manual "claim, reset, reload" step covers it for now.
 - **Formatting:** the KI-30 F10 note sits after a blank line, and `### KI-31` follows it without one.
 - **Next action:** fix these with the first `candy:check` run on Kiro's real output (KI-44).
+
+### KI-46: F11 Done-when not yet run in Kiro · Major · Open
+- **Context:** F11 was built in Claude Code against the claims fixture with a fake LLM (D-38). The PRD Done-when needs a real Kiro session on Candy Swap, which needs F10 (KI-44).
+- **Next action:** follow "Manual F11 check in Kiro" in `docs/kiro-notes.md`. Record whether any tool call timed out (KI-12), whether all five tools show up, and how many polls a full run needs.
+
+### KI-47: `rehaunt` rewrites the full report as a subset · Minor · Open
+- **Problem:** `rehaunt` calls `summon({ only })`, and F08's writer replaces `haunting-report.md`/`.json` whole, so every criterion outside `ids` shows as `notRun`. The CLI's `--only` has the same behaviour.
+- **Next action:** F14, which owns the diff against the previous `verdicts.json`, should merge subset verdicts into the previous full set before rendering.
 
