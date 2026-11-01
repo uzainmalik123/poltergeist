@@ -40,9 +40,14 @@ class StepFailure extends Error {}
 const now = () => performance.timeOrigin + performance.now();
 const firstLine = (s: string) => s.split('\n')[0]?.trim() ?? '';
 
-/** The step currently or most recently started. */
+const ACTIONS: ReadonlySet<string> = new Set(['goto', 'click', 'dblclick', 'fill', 'press', 'back', 'reload', 'login', 'logout']);
+
+/**
+ * The step a guard report belongs to: the latest started step that can send a request. Reports arrive
+ * asynchronously, often after the click that caused them has finished and a `wait` has started.
+ */
 export function currentStep(run: ActorRun): StepResult | undefined {
-  return run.steps.at(-1);
+  return run.steps.findLast((s) => ACTIONS.has(s.type)) ?? run.steps.at(-1);
 }
 
 /**
