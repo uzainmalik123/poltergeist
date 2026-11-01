@@ -14,7 +14,7 @@ It reads a Kiro spec (`.kiro/specs/<name>/requirements.md`, EARS-style criteria)
 
 ## Current state (2026-11-01)
 
-- **Scaffold, F01 Spec Reader, F02 Config & Safety, F03 Route Scout, F04 Personas & Generators, F05 Ghost Compiler and F06 Ghost Runner are built** (`packages/core/src/{spec,config,safety,scout,personas,compiler,runner}/`, D-27, D-29, D-30, D-31, D-32, D-33). F03, F05 and F06 were built against fixtures because F10 isn't built yet; their real Candy Swap checks are KI-30, KI-34 and KI-36. F05 tests use a fake `LlmClient` and never call the network. `npm run health` is green locally and in CI. **Next: F10 (in Kiro)**, then the KI-30, KI-34 and KI-36 checks and the re-scoped KI-01 spike, then F07.
+- **Scaffold, F01 Spec Reader, F02 Config & Safety, F03 Route Scout, F04 Personas & Generators, F05 Ghost Compiler, F06 Ghost Runner and F07 Verdicts are built** (`packages/core/src/{spec,config,safety,scout,personas,compiler,runner,verdicts}/`, D-27, D-29, D-30, D-31, D-32, D-33, D-34). F03, F05 and F06 were built against fixtures because F10 isn't built yet; their real Candy Swap checks are KI-30, KI-34 and KI-36. F05 tests use a fake `LlmClient` and never call the network. `npm run health` is green locally and in CI. **Next: F10 (in Kiro)**, then the KI-30, KI-34 and KI-36 checks and the re-scoped KI-01 spike, then F08.
 - **Escapes:** keep invisible or bidi characters (`\u200B`, `\u202E`, NBSP and so on) as `\uXXXX` escapes in source, never as literals. eslint's `no-irregular-whitespace` rejects literals, and they're unreadable in review.
 - **The prototype** lives at `../poltergeist-old` (private, built before the hacking window). It is **read-only and off-limits for code**: don't copy, port or open `../poltergeist-old/packages/` while implementing. Everything worth keeping is already in `docs/DECISIONS.md`, `docs/KNOWN_ISSUES.md` and `docs/LESSONS.md`. This keeps every line of code inside the hacking window (KI-24).
 - **`.kiro/` is real** in this repo. It holds the spec (`.kiro/specs/poltergeist/`) and steering. Commit it, and never gitignore it.
@@ -144,7 +144,7 @@ Each PRD feature (or KNOWN_ISSUES item) goes through this cycle. The skills are 
 ## Do first (as of 2026-11-01)
 
 1. **KI-05 / KI-24:** read the 2026 rules (kiroween.devpost.com/rules). Check tracks, deadline, team size, video cap, "new projects" and "working app". Update D-23, the PRD timeline and this file.
-2. **F10 (in Kiro)**, then rerun F03's Done-when against it (KI-30), then compile it live with a real key (KI-34) and haunt it at 12 ghosts (KI-36) as the re-scoped **KI-01 spike** (F04–F06 are done), then **F07**, each through the cycle, with its LESSONS section open.
+2. **F10 (in Kiro)**, then rerun F03's Done-when against it (KI-30), then compile it live with a real key (KI-34) and haunt it at 12 ghosts (KI-36) as the re-scoped **KI-01 spike** (F04–F07 are done), then **F08**, each through the cycle, with its LESSONS section open.
 3. **KI-06:** verify the Kiro hook, MCP and Power formats before F11, F13 or F18.
 4. **F26:** iterate on the sprites and wordmark with the user early (from week 2). The THEME drafts are only a start.
 

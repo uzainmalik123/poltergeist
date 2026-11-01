@@ -5,7 +5,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import type { Step } from '../../src/compiler/dsl.js';
 import { parseConfig, type LoadedConfig } from '../../src/config/load.js';
 import { generate } from '../../src/personas/generators/index.js';
-import { runActor, startActor, type ActorEnv } from '../../src/runner/actor.js';
+import { markBlockedByRule, runActor, startActor, type ActorEnv, type ActorRun } from '../../src/runner/actor.js';
 import { BarrierSet } from '../../src/runner/barrier.js';
 import { installHolds } from '../../src/runner/holds.js';
 import type { ActorName, StepResult } from '../../src/runner/types.js';
@@ -181,5 +181,28 @@ describe('runActor', () => {
     expect(run.steps.length).toBeGreaterThanOrEqual(1);
     await done;
     expect(run.steps.map((s) => s.type)).toEqual(['goto', 'wait']);
+  });
+});
+
+describe('markBlockedByRule', () => {
+  const run = (outcome: StepResult['outcome']): ActorRun => ({
+    steps: [
+      { actor: 'a', index: 0, type: 'click', outcome, startedAt: 0, durationMs: 5 },
+      { actor: 'a', index: 1, type: 'wait', outcome: 'ok', startedAt: 5, durationMs: 0 },
+    ],
+    end: 'done',
+    loggedIn: false,
+  });
+
+  it('marks the latest action step that was ok', () => {
+    const r = run('ok');
+    markBlockedByRule(r);
+    expect(r.steps.map((s) => s.outcome)).toEqual(['blocked-by-rule', 'ok']);
+  });
+
+  it.each(['failed', 'timeout'] as const)('keeps a %s outcome', (outcome) => {
+    const r = run(outcome);
+    markBlockedByRule(r);
+    expect(r.steps[0]?.outcome).toBe(outcome);
   });
 });

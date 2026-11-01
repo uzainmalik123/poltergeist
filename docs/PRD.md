@@ -25,7 +25,7 @@
 | 6 | n/a | **KI-01 spike** (compile + run 5 criteria × 3 personas) | High | TBD | F01, F03, F04 |
 | 7 | F05 | Ghost Compiler (LLM → Plan DSL) | High | Done (fixture; live check pending, KI-34) | F01, F03, F04 (built before the spike, D-32) |
 | 8 | F06 | Ghost Runner | High | Done (fixture; real Candy Swap check pending, KI-36) | F02, F05 (built before F10, D-33) |
-| 9 | F07 | Verdicts & Flake Filter | High | TBD | F06 |
+| 9 | F07 | Verdicts & Flake Filter | High | Done | F06 |
 | 10 | F08 | Haunting Report | High | TBD | F07 |
 | 11 | F26 | Costume Kit (glyph renderer, sprites, wordmark, palette, possession) | High | TBD | n/a (can run in parallel from week 2) |
 | 12 | F09 | CLI `summon` | High | TBD | F08, F26 |
@@ -224,7 +224,9 @@
   - `redirect` reports are shown as blocked redirects (D-22).
 - **Done when:** a Doppelgänger plan's two actors are released at the barrier < 50 ms apart, and a full Candy Swap haunting at 12 ghosts finishes in < 5 min.
 
-### F07: Verdicts & Flake Filter · High · TBD
+### F07: Verdicts & Flake Filter · High · Done
+
+> 2026-11-01: built per D-34. Plan `docs/plans/2026-11-01-F07-verdicts.md`. `computeVerdicts(pairs, run)` in `packages/core/src/verdicts/`. Table tests cover every path: `haunted` (incl. beside a system error, and at N = 1), `flaky` (incl. one failure beside system errors, and different assertions failing in different reps), `clean` (incl. beside a plan error, and with no assertions), `inconclusive` from plan/blocked/unlabelled assertion failures, timeouts, forbidden-voided reps, missing reps and pairs that never ran, `notApplicable`, `uncompilable` and the criterion rollup; fast-check checks determinism, order independence and monotonicity. On the F06 fixture the Doppelgänger race comes out `haunted`. KI-37's timeout, attribution and rep-error items were folded into the runner.
 
 **Owns:** turning raw results across N reps into pair and criterion verdicts. Implements Requirement 7.
 **Not this feature:** formatting (F08) · comparing runs (F14).
@@ -459,4 +461,5 @@ Implements Requirement 12.
 - 2026-10-31: **F03 Done against a fixture** (D-30). F03 was built before F10; the real Candy Swap check is tracked in KI-30.
 - 2026-10-31: **F05 Done against a fixture** (D-32). Built before the KI-01 spike: deterministic route picker, no DSL `literal`, two-pass validation, one retry, plan cache. The live Candy Swap check is KI-34, and the spike is re-scoped to use F05's compiler.
 - 2026-11-01: **F06 Done against a fixture** (D-33). Raw per-rep results for F07, conflict-key scheduling (KI-13), shared-session Doppelgänger, rendezvous barrier, request holds, ghost-cursor overlay, frames, artifacts, leak abort. The real Candy Swap check is KI-36.
+- 2026-11-01: **F07 Done** (D-34). Pure `computeVerdicts`: ⌈2N/3⌉ of requested reps, app-only failures, forbidden blocks void a rep, `uncompilable` rolls up as `inconclusive`. KI-37's timeout, attribution and rep-error items fixed in the runner.
 - 2026-10-31: **F04 Done** (D-31). Three core personas, eight deterministic generators (adds `plain`), vendored BLNS without injection sections. KI-32 opened (typed inputs).
