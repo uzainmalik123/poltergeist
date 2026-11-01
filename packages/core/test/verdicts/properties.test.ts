@@ -52,7 +52,7 @@ describe('computeVerdicts properties', () => {
       fc.property(run, (r) => {
         expect(computeVerdicts([pair], r)).toEqual(computeVerdicts([pair], r));
       }),
-    );;
+    );
   });
 
   it("doesn't depend on result order", () => {

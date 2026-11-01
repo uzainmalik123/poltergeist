@@ -104,6 +104,10 @@ describe('computeVerdicts', () => {
     expect(() => computeVerdicts([compiled('3.1', 'wraith')], { reps: 3, results: [rep('3.1', 'wraith', k)] })).toThrow(TypeError);
   });
 
+  it.each([0, -1, 1.5])('throws on reps %s instead of calling everything clean', (reps) => {
+    expect(() => computeVerdicts([compiled('3.1', 'wraith')], { reps, results: [] })).toThrow(TypeError);
+  });
+
   it('throws on a duplicate input pair', () => {
     expect(() => computeVerdicts([compiled('3.1', 'wraith'), compiled('3.1', 'wraith')], { reps: 3, results: [] })).toThrow(TypeError);
   });

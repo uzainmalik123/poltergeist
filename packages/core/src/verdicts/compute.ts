@@ -32,6 +32,8 @@ const key = (criterion: string, persona: string) => `${criterion}/${persona}`;
  */
 export function computeVerdicts(pairs: readonly PairResult[], run: Pick<RunResult, 'reps' | 'results'>): Verdicts {
   const { reps } = run;
+  // reps 0 would make threshold 0 and every compiled pair clean.
+  if (!Number.isInteger(reps) || reps < 1) throw new TypeError(`reps must be a positive integer, got ${reps}`);
   const compiled = new Map<string, PairRepResult[]>();
   const seenPairs = new Set<string>();
   for (const p of pairs) {
