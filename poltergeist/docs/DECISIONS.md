@@ -45,7 +45,7 @@
 | D-36 | F09 CLI rulings (extends D-17, D-35): fixture-first until F10/F26, `summon()` in core with a thin `@poltergeist/cli`, `parseArgs` flags, exit 0/1/2/130, run folder next to the config, live ghost block only on a colour TTY, loopback `--seance` event server with replay, KI-35/KI-41 fold-ins | Accepted |
 | D-37 | F10 prep rulings (extends D-10, D-01): Kiro builds Candy Swap, we ship only a brief, its Poltergeist config and `npm run candy:check`; URL/script/seed contract; standalone package; bug-neutral prompt | Accepted |
 | D-38 | F11 MCP server rulings (extends D-36, D-01): five snake_case tools, long-poll runs (`waitMs` ≤ 100 s, `get_run_status`), one run per process, 6 000-char results, root-confined paths, `rehaunt` without diff until F14, SDK 1.32.2, fixture Done-when (KI-46) | Accepted |
-| D-39 | Poltergeist becomes the headless red-team **engine inside Reanimator**; the entry is Reanimator/Frankenstein; standalone UI (F12 Séance) and costume (F26) are deprioritised (supersedes D-23) | Accepted |
+| D-39 | Poltergeist becomes the headless red-team **engine inside Reanimator**; the entry is Reanimator/Frankenstein; standalone UI (F12 Séance) and costume (F26) are deprioritised | Accepted |
 
 ---
 
@@ -543,13 +543,13 @@
   - If Kiro proves to honour long `requestTimeout`s, the default `waitMs` can go up.
 
 ### D-39: Poltergeist is the headless engine inside Reanimator (supersedes D-23)
-- **Context (2026-11-01):** the team merged Poltergeist with the teammate's **Reanimator** concept into one Kiroween entry, built in this (eligible) repo. The repo was split into two sibling projects: `reanimator/` (the product and all UI/art) and `poltergeist/` (this engine). See the repo-root `AGENTS.md` and `../../reanimator/docs/`. (This is distinct from D-38, which is the F11 MCP ruling.)
+- **Context (2026-11-01):** the team merged Poltergeist with the teammate's **Reanimator** concept into one Kiroween entry, built in this repo (the eligible one). The repo was split into two sibling projects: `reanimator/` (the product and all UI/art) and `poltergeist/` (this engine). See the repo-root `AGENTS.md` and `reanimator/docs/`.
 - **Decision:**
   - The submission is **Reanimator**, in **Frankenstein** (a mash-up). Poltergeist is a component, not a separate entry. This supersedes D-23 (Costume Contest) and, with it, D-02.
   - **Poltergeist runs headless.** Reanimator renders everything, including "Death's attack", which is a visualisation of a Poltergeist run. Reanimator calls this engine (CLI `summon` / MCP / report JSON) and never re-implements it.
-  - **Deprioritised in the engine:** F12 Séance Room and F26 Costume Kit (the standalone "haunted terminal" look). The one look is Reanimator's necromancer dot-matrix style (`../../reanimator/docs/THEME.md`). The CLI, the report and the MCP server remain the engine's real interfaces.
-  - **Personas are framed as Death's minions**, each a class of adversarial test (`../../reanimator/docs/DECISIONS.md` D-R5). This does **not** change the engine's safety stance: D-04 (no LLM-written payloads; vetted static inputs + generators), D-05 (localhost-only targets) and D-08 (QA/robustness, not an exploit tool) all stand. F25 stays scrapped.
+  - **Deprioritised in the engine:** F12 Séance Room and F26 Costume Kit (the standalone "haunted terminal" look). The one look is Reanimator's necromancer dot-matrix style (`reanimator/docs/THEME.md`). The CLI, the report and the MCP server remain the engine's real interfaces.
+  - **Personas are framed as Death's minions**, each a class of adversarial test (`reanimator/docs/DECISIONS.md` D-R5). This does **not** change the engine's safety stance: D-04 (no LLM-written payloads; vetted static inputs + generators), D-05 (localhost-only targets) and D-08 (QA/robustness, not an exploit tool) all stand. F25 stays scrapped.
 - **Consequences:**
   - The core engine path (F01–F09, F11, F14) is what Reanimator needs. F12 and F26 can be dropped from scope unless time allows.
-  - Priorities now serve Reanimator's build order (`../../reanimator/docs/PRD.md`): a clean way to point the engine at a served localhost app and return a report Reanimator can draw as wounds.
+  - Priorities now serve Reanimator's build order (`reanimator/docs/PRD.md`): a clean way to point the engine at a served localhost app and return a report that Reanimator can draw as wounds.
   - Poltergeist's own `docs/PRD.md` category/costume items are now secondary; this decision governs.

@@ -25,7 +25,7 @@
 - **Consequences:** the repo now holds two sibling projects, `poltergeist/` (engine) and `reanimator/` (app + art + story). See the repo-root `AGENTS.md`.
 
 ### D-R2: Fresh code only
-- **Context:** both the earlier Reanimator prototype (`../../../reanimator`) and `../../../poltergeist-old` were started before the hacking window, so their code is ineligible.
+- **Context:** both the earlier Reanimator prototype (`../../reanimator`) and `../../poltergeist-old` were started before the hacking window, so their code is ineligible.
 - **Decision:** write all Reanimator code fresh, inside the window. Do **not** copy or port files, assets, images, models or sound from either. The *concepts, story and technique* are the team's own and carry over through these docs.
 - **Consequences:** the art is rebuilt from the description in THEME.md, not lifted. Assets are made new (see AGENTS.md § the art).
 
