@@ -29,7 +29,7 @@
 | D-20 | Route Scout rules (F03): one guarded context per identity, heuristic login with optional D-15 field overrides, in-memory storageState, ariaSnapshot-based capture, per-route hash over interactive elements | Accepted (the "fixture first" bullet is superseded by D-25) |
 | D-21 | Route Scout implementation rulings (F03): origin-only `target`, emitted labels and testIds must resolve, hard per-route budget, no summary file, visit-order `onRoute`, exact login-path match, redacted `finalPath` and blocked URLs | Accepted |
 | D-22 | Network guard reports a redirect hop that Chromium only surfaces as the original request's dead-proxy failure, with reason `redirect` (extends D-18) | Accepted |
-| D-23 | Target the **Costume Contest** category (supersedes D-02) | Superseded by D-38 |
+| D-23 | Target the **Costume Contest** category (supersedes D-02) | Superseded by D-39 |
 | D-24 | The costume is a "haunted terminal": ASCII glyphs via Bayer dither, ectoplasm green for ghosts only, distinct from Reanimator | Accepted |
 | D-25 | Fresh start: new repo inside the hacking window, rebuilt from docs (no ported code), real `.kiro/` spec, new build order | Accepted |
 | D-26 | Costume Kit is its own package and a High feature (F26); possession/exorcism move there from F22 | Accepted |
