@@ -149,15 +149,15 @@ Criterion IDs follow Kiro's convention (`N.M`, D-16), so Poltergeist's own Spec 
 3. THE Installer SHALL write the MCP entry, a steering file and an agent hook into a target's `.kiro/`, and SHALL NOT overwrite existing files without `--force` [F13].
 4. THE Power SHALL bundle the MCP server and steering as an installable Kiro Power [F18].
 
-### Requirement 11: Séance Room [F12, F15]
+### Requirement 11: Live Feed and Replay [F12, F15]
 
-**User Story:** As a viewer, I want to see the ghosts attacking the app and the spec lines changing colour, so that the result is obvious and memorable.
+**User Story:** As a renderer (Reanimator's attack scene), I want a live, render-agnostic view of a run, so that I can show the ghosts attacking the app and the spec lines changing as it happens.
 
 #### Acceptance Criteria
 
-1. WHILE a run is live, THE Seance_Room SHALL show one tile per active ghost with its live frames and current step.
-2. THE Seance_Room SHALL show the requirement board: each criterion line with its live verdict.
-3. WHEN a criterion becomes `haunted`, THE Seance_Room SHALL mark its line as possessed and link to the failing evidence.
+1. WHILE a run is live, THE Live_Feed SHALL provide one ghost entry per active ghost with its current step, cursor position and latest frame.
+2. THE Live_Feed SHALL provide the requirement board: each criterion line with its live status (`waiting`, `running`, then its verdict).
+3. WHEN a criterion becomes `haunted`, THE Live_Feed SHALL link its line to the failing ghost and that ghost's evidence frame in the run folder.
 4. THE Seance_Room SHALL replay a finished run from its run folder with no live target, LLM or browser, and SHALL label it as a recording [F15].
 
 ### Requirement 12: Costume [F26, F22]

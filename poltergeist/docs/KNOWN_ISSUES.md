@@ -51,12 +51,13 @@
 | KI-40 | The report uses core's draft wordmark and glyph table until F26 ships `@poltergeist/costume` | Minor | F26, F09 | Open |
 | KI-41 | F08 review minors: markdown/HTML in criterion text and plan strings outside code spans, bidi/invisible characters pass `oneLine`, flaky pairs under a haunted criterion hidden in markdown, orphan `.tmp` after a kill, non-atomic pair of files, long wordmark override, Windows cross-drive paths | Minor | F11 | Open (injection and bidi fixed 2026-11-01, F09) |
 | KI-42 | F09 Done-when (`npm ci && npx playwright-core install chromium && npm run summon` on Candy Swap from a clean clone) not yet run: built against a fixture (D-36) | Major | F09 sign-off | Open |
-| KI-43 | F09 review minors: more invisible characters (U+034F, U+115F, U+3164, tag characters…), live block garbles on wrap or short terminals, abort not re-checked during verdicts/report, API key read late and from `process.env`, no frame backpressure for slow `--seance` clients, no CLI test aborting mid-compile or mid-rep | Minor | F12, F11 | Open |
+| KI-43 | F09 review minors: more invisible characters (U+034F, U+115F, U+3164, tag characters…), live block garbles on wrap or short terminals, abort not re-checked during verdicts/report, API key read late and from `process.env`, no frame backpressure for slow `--seance` clients, no CLI test aborting mid-compile or mid-rep | Minor | F12, F11 | Open (frame backpressure fixed 2026-11-02, F12) |
 | KI-44 | Candy Swap not yet built in Kiro: only the F10 prep kit exists (D-37) | Major | F10, KI-30/34/36/38/42, demo | Open |
 | KI-45 | F10 prep review minors: non-JSON dump gives no snippet, `db:dump` gets provider keys, unreadable spec crashes `candy:check`, no-op reset passes determinism, KI-30 note formatting | Minor | F10 | Open |
 | KI-46 | F11 Done-when (a Kiro session on Candy Swap runs summon → report → fix → rehaunt, haunted → clean) not yet run: built against a fixture (D-38) | Major | F11 sign-off | Open |
 | KI-47 | A `rehaunt` (subset) run rewrites `haunting-report.md`/`.json` with every other criterion as `notRun`, so the board loses the full picture | Minor | F14 | Open |
 | KI-48 | F11 review minors: `..foo` names rejected, a failed run isn't `isError`, missing config only fails in the background, misleading report errors (invalid JSON reads as missing; ids absent after a subset run read as unknown), unbounded `abortAll`, `capText` over its limit for tiny caps, missing server-level tests (retry after failure, absolute outside path), npm name `poltergeist-mcp` unreserved | Minor | F13, F14 | Open |
+| KI-49 | F12 Done-when on real Candy Swap (a 12-ghost run consumed live by Reanimator's R4 scene) not yet run: built against the claims fixture (D-40) | Major | F12 sign-off, R4 | Open |
 
 ---
 
@@ -476,6 +477,7 @@
 - **Tests:** no CLI-level test aborts mid-compile or mid-rep (core's tests cover the abort paths).
 - **Next action:** clip the live block with the next CLI change. Do backpressure with F12, credentials with F11 (MCP also calls `summon()`).
 
+- **2026-11-02 (F12, D-40):** frame backpressure fixed. A `--seance` client over 1 MiB buffered gets no frames until it drains; other events always go through.
 ### KI-44: Candy Swap not yet built in Kiro · Major · Open
 - **Context:** F10 has to be generated and built in Kiro (D-10), and the F10 cycle on 2026-11-01 ran in Claude Code without Kiro. So it shipped only the prep kit (D-37): the brief, the Poltergeist config, `npm run candy:check` and a skipped spec test.
 - **Blocks:** F10's Done-when, and with it every real Candy Swap check (KI-30, KI-34, KI-36, KI-38, KI-42), the KI-01 spike and the demo.
@@ -513,4 +515,8 @@
 - **Tests:** no server-level test of a new `summon_ghosts` after a failed run, and none of an absolute outside path (`/etc`). The code handles both.
 - **npm name:** `poltergeist-mcp` is unclaimed on npm. Reserve it, or the scoped name, before F13 or F18 point anyone at npx.
 - **Next action:** fold into F13 (the installer touches the same paths) or F14 (`rehaunt` and the report).
+
+### KI-49: F12 Live Feed not yet checked on Candy Swap · Major · Open
+- **Context:** F12 was re-scoped to a headless Live Feed (D-40) and built against the claims fixture, because Candy Swap isn't built yet (KI-44).
+- **Next action:** once Candy Swap exists, run `poltergeist summon --seance` on it at 12 ghosts and fold the stream with `foldLive`. Check that frames keep up (≤ 4 fps × 12) without the backpressure dropping everything, and that every haunted line's evidence frame exists. Then wire it into Reanimator's R4 scene.
 

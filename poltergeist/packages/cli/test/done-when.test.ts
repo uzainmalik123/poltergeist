@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
-import { writeFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import type { SummonEvent } from '@poltergeist/core';
+import { foldLive, type LiveMessage, type SummonEvent } from '@poltergeist/core';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import WebSocket from 'ws';
 import { makeClaimsProject, type ClaimsProject } from '../../core/test/summon/project-fixture.js';
@@ -61,7 +61,7 @@ describe('F09 Done-when (fixture)', () => {
     const code = await main(summonArgs('--seance', '--only', '3.1', '--reps', '1'), { ...deps, seancePort: 0 });
     expect(code, out.stderr).toBe(0);
     await done;
-    expect(types[0]).toBe('run.started');
+    expect(types.slice(0, 2)).toEqual(['live.hello', 'run.started']);
     expect(types).toContain('run.finished');
   }, 120_000);
 
@@ -119,4 +119,53 @@ describe('F09 Done-when (fixture)', () => {
     expect(await main(['--help'], deps)).toBe(0);
     expect(out.stdout).toContain('--spec');
   });
+});
+
+// PRD F12 Done-when, fixture-first (D-40). The 12-ghost Candy Swap run is KI-49.
+describe('F12 Done-when (fixture)', () => {
+  it('a client that joins late folds the same board as events.ndjson, with 3.2 haunted and its evidence', async () => {
+    const { out, deps, onStdout } = capture();
+    const late: LiveMessage[] = [];
+    let lateDone!: () => void;
+    const lateFinished = new Promise<void>((r) => (lateDone = r));
+    onStdout((s) => {
+      const url = /(ws:\/\/127\.0\.0\.1:\d+\/runs\/\S+)/.exec(s)?.[1];
+      if (!url) return;
+      // The first client only watches for the first ghost; the late client joins then.
+      const early = new WebSocket(url);
+      let joined = false;
+      early.on('message', (data) => {
+        if (joined || (JSON.parse(String(data)) as LiveMessage).type !== 'ghost.spawned') return;
+        joined = true;
+        const ws = new WebSocket(url);
+        ws.on('message', (d) => {
+          const m = JSON.parse(String(d)) as LiveMessage;
+          late.push(m);
+          if (m.type === 'run.finished') lateDone();
+        });
+      });
+    });
+    const code = await main(summonArgs('--seance'), {
+      ...deps,
+      seancePort: 0,
+      summonOverrides: { ...deps.summonOverrides, runOptions: { frameFps: 2 } },
+    });
+    expect(code, out.stderr).toBe(1);
+    await lateFinished;
+
+    expect(late[0]).toMatchObject({ type: 'live.hello', protocol: 1 });
+    const live = foldLive(late);
+    expect(live.phase).toBe('finished');
+    const board = (s: typeof live) => s.lines.map((l) => [l.id, l.status]);
+    expect(board(live)).toEqual([['3.1', 'clean'], ['3.2', 'haunted']]);
+
+    const runDir = live.runDir!;
+    const ndjson = (await readFile(join(runDir, 'events.ndjson'), 'utf8')).trim().split('\n').map((l) => JSON.parse(l) as LiveMessage);
+    expect(board(foldLive(ndjson))).toEqual(board(live));
+
+    const evidence = live.lines.find((l) => l.id === '3.2')?.evidence;
+    expect(evidence?.ghostId).toMatch(/^3\.2__/);
+    expect(evidence?.frame).toMatch(/^frames\/3\.2__.+\/\d{5}\.jpg$/);
+    expect(existsSync(join(runDir, evidence!.frame!))).toBe(true);
+  }, 180_000);
 });

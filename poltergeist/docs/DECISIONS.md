@@ -46,6 +46,7 @@
 | D-37 | F10 prep rulings (extends D-10, D-01): Kiro builds Candy Swap, we ship only a brief, its Poltergeist config and `npm run candy:check`; URL/script/seed contract; standalone package; bug-neutral prompt | Accepted |
 | D-38 | F11 MCP server rulings (extends D-36, D-01): five snake_case tools, long-poll runs (`waitMs` ≤ 100 s, `get_run_status`), one run per process, 6 000-char results, root-confined paths, `rehaunt` without diff until F14, SDK 1.32.2, fixture Done-when (KI-46) | Accepted |
 | D-39 | Poltergeist becomes the headless red-team **engine inside Reanimator**; the entry is Reanimator/Frankenstein; standalone UI (F12 Séance) and costume (F26) are deprioritised | Accepted |
+| D-40 | F12 re-scoped to a headless **Live Feed** for Reanimator (extends D-39, D-36): pure `reduceLive`/`foldLive` → `LiveState` in `@poltergeist/core/live`, `live.hello` protocol 1, late joiners get backlog + latest frame per active ghost, frame-only backpressure at 1 MiB, `run.started.runDir`; no React Séance | Accepted |
 
 ---
 
@@ -553,3 +554,24 @@
   - The core engine path (F01–F09, F11, F14) is what Reanimator needs. F12 and F26 can be dropped from scope unless time allows.
   - Priorities now serve Reanimator's build order (`reanimator/docs/PRD.md`): a clean way to point the engine at a served localhost app and return a report that Reanimator can draw as wounds.
   - Poltergeist's own `docs/PRD.md` category/costume items are now secondary; this decision governs.
+
+### D-40: F12 becomes the headless Live Feed (extends D-39, D-36)
+- **Context:** grilling F12 (2026-11-02) after D-39 deprioritised the Séance React app. Reanimator's R4 attack scene wants to "see" a run as it happens, or drive the scene from the finished run. The user asked to accept the recommended answers.
+- **Decision:**
+  - **No React Séance, no `:6661`.** F12 delivers the data a renderer needs; Reanimator draws it.
+  - **`LiveState` in core:** `packages/core/src/live/` (no Node or Playwright imports), exported from `@poltergeist/core` and the subpath `@poltergeist/core/live`.
+    - `reduceLive(state, message)` is pure and never mutates; an unknown event type returns the same state (forward-compatible). `foldLive(messages)` folds a stream or `events.ndjson`.
+    - Board lines: `waiting` → `running` (first ghost spawned) → the criterion verdict. Each line keeps its failed assertions with the ghost ids of that criterion + persona + rep.
+    - A `haunted` line links `evidence = {ghostId, frame?}`, the first failing ghost and its latest frame, `frames/<ghostId>/<seq:5>.jpg` relative to `runDir`.
+    - Ghost tiles: persona, criterion, rep, actor, step, step index, outcome, cursor x/y, latest frame, `done` after `rep.finished`. Guard blocks, counts and haunted ids are kept too.
+    - A verdict for a criterion it never saw adds a line instead of being dropped.
+  - **Wire protocol:** `LIVE_PROTOCOL = 1`. The `--seance` server's first message to each client is `{type: 'live.hello', protocol, runId, t}`.
+  - **Late joiners** get hello, the non-frame backlog, then the latest frame of each ghost whose rep hasn't finished, so their `foldLive` matches a client that was there from the start.
+  - **Backpressure (KI-43):** a client with `bufferedAmount` > 1 MiB is sent no `ghost.frame` until it drains; other events are never dropped.
+  - **`run.started` carries `runDir`** (absolute), so evidence paths resolve.
+  - Requirement 11.1–11.3 are reworded for `Live_Feed`; 11.4 (replay, F15) is unchanged.
+- **Consequences:**
+  - Done-when is fixture-first: on the claims fixture, a client that joins after the first ghost spawns folds a finished board equal to `foldLive(events.ndjson)`, with 3.2 `haunted` and an evidence frame on disk (`packages/cli/test/done-when.test.ts`). The 12-ghost Candy Swap check is KI-49.
+  - F15 replay can start from `foldLive` over `events.ndjson`, but frames aren't in ndjson, so a replay reads them from `frames/`.
+  - F22 (Séance atmosphere) has nothing to polish in the engine; it moves to Reanimator if anywhere.
+

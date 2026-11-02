@@ -30,7 +30,7 @@
 | 11 | F26 | Costume Kit (glyph renderer, sprites, wordmark, palette, possession) | High | TBD | n/a (can run in parallel from week 2) |
 | 12 | F09 | CLI `summon` | High | Done (fixture; real Candy Swap check pending, KI-42) | F08, F26 |
 | 13 | F11 | Kiro MCP Server | High | Done (fixture, KI-46) | F09 |
-| 14 | F12 | Séance Room (Live) | High | TBD | F06, F26 |
+| 14 | F12 | Live Feed (headless, for Reanimator; D-40) | High | Done (fixture; Candy Swap check pending, KI-49) | F06, F09 |
 | 15 | F14 | Re-haunt & Verdict Diff | Med | TBD | F09 |
 | 16 | F15 | Replay Mode & Deployed Séance | Med | TBD | F12 |
 | 17 | F13 | Kiro Installer (`init`) + Agent Hook | Med | TBD | F11 |
@@ -309,9 +309,11 @@ Implements Requirement 12.
   - Tested in Kiro, with Claude Code as the fallback.
 - **Done when:** in a Kiro session against Candy Swap, the agent runs summon → report → fix → rehaunt, and a criterion goes haunted → clean.
 
-### F12: Séance Room (Live) · High · TBD
+### F12: Live Feed (headless) · High · Done (fixture, D-40; Candy Swap check KI-49)
 
-**Owns:** `@poltergeist/seance` (Vite + React) in live mode: the layout, the WebSocket client, the requirement board, the ghost tiles (glyph-rendered frames with sprites at cursor positions via F26), and the haunted highlight with links to evidence. Implements Requirement 11.1–11.3.
+> 2026-11-02: re-scoped by D-40 under D-39. No React Séance: the engine provides a pure `LiveState` (`reduceLive`/`foldLive` in `packages/core/src/live/`, subpath `@poltergeist/core/live`) and a hardened `--seance` WebSocket (`live.hello` protocol 1, late-join backlog + latest frames, frame backpressure at 1 MiB). `run.started` carries `runDir`. Plan `docs/plans/2026-11-02-F12-live-feed.md`. Done-when (fixture): a late client's folded board equals `foldLive(events.ndjson)`, with 3.2 `haunted` and its evidence frame on disk. **Still to do:** the 12-ghost Candy Swap run consumed by Reanimator's R4 (KI-49). The original Séance scope below is kept for history.
+
+**Owns (original, superseded by D-40):** `@poltergeist/seance` (Vite + React) in live mode: the layout, the WebSocket client, the requirement board, the ghost tiles (glyph-rendered frames with sprites at cursor positions via F26), and the haunted highlight with links to evidence. Implements Requirement 11.1–11.3.
 **Not this feature:** replay and deployment (F15) · the renderer, sprites and animations (F26) · sound and atmosphere (F22).
 
 - **User story:** As a viewer (developer or judge), I want to _see_ the ghosts swarm the app and the spec lines get possessed, so the result is obvious and memorable.
@@ -473,3 +475,4 @@ Implements Requirement 12.
 - 2026-11-01: **F09 Done against a fixture** (D-36). Core `summon()` plus a thin `@poltergeist/cli`: flags, themed board, live ghost block on a colour TTY, exit codes 0/1/2/130, `--seance` loopback event server with replay. Fixed KI-41 (report injection, bidi) and KI-35 (best-effort writes, duplicate personas). The real Candy Swap check is KI-42.
 - 2026-11-01: **F10 prep done** (D-37). Kiro brief, Candy Swap's `poltergeist.config.json`, `npm run candy:check` (F10's Done-when) and a skipped real-spec F01 test. The app itself is built in Kiro (KI-44). Candy Swap is a standalone package, not a root workspace.
 - 2026-11-01: **F11 Done against a fixture** (D-38). `@poltergeist/mcp` (`poltergeist-mcp --root`): five tools including `get_run_status`, long-poll runs (resolves KI-12), 6 000-char results, root-confined paths. `docs/kiro-notes.md` holds the MCP facts (KI-06 Investigating). `integrations/kiro/mcp.json` is the template. The Kiro check is KI-46; the subset-report issue is KI-47 (F14).
+- 2026-11-02: **F12 Done against a fixture, re-scoped to a headless Live Feed** (D-40, under D-39). Pure `LiveState` reducer in core for Reanimator's R4, `live.hello` protocol, late-join frames and frame backpressure on the `--seance` server (KI-43 item fixed), `run.started.runDir`. Requirement 11.1–11.3 reworded. The Candy Swap check is KI-49.
