@@ -65,6 +65,7 @@ describe('summon', () => {
     expect([...firsts].sort((a, b) => a - b)).toEqual(firsts);
     expect(ndjson.at(-1)).toBe('run.finished');
     for (const t of order) expect(events.some((e) => e.type === t)).toBe(true);
+    expect(events[0]).toMatchObject({ type: 'run.started', runDir: r.runDir });
   }, 120_000);
 
   it('rejects an unknown --only id before launching or compiling', async () => {

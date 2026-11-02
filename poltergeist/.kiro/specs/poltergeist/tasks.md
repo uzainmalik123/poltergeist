@@ -31,6 +31,6 @@ Work happens one PRD feature at a time, through the grill → plan → implement
   - _Requirements: 9.1, 9.2_
 - [x] 13. F11 Kiro MCP Server (fixture; real Kiro + Candy Swap check pending, KI-46, D-38)
   - _Requirements: 10.1, 10.2_
-- [ ] 14. F12 Séance Room (Live)
+- [x] 14. F12 Live Feed (headless, D-40; Candy Swap check KI-49)
   - _Requirements: 11.1–11.3_
 - [ ] 15. Med features in PRD order (F13–F18), then Low (F19–F22)
