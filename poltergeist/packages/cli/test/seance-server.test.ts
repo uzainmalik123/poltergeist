@@ -1,4 +1,4 @@
-import { UsageError, type SummonEvent } from '@poltergeist/core';
+import { UsageError, type LiveMessage, type SummonEvent } from '@poltergeist/core';
 import { afterEach, describe, expect, it } from 'vitest';
 import WebSocket from 'ws';
 import { startEventServer, type EventServer } from '../src/seance-server.js';
@@ -8,8 +8,8 @@ afterEach(async () => {
   await Promise.all(servers.splice(0).map((s) => s.close()));
 });
 
-async function start(runId = 'r1', port = 0) {
-  const s = await startEventServer(runId, { port });
+async function start(runId = 'r1', port = 0, maxBuffered?: number) {
+  const s = await startEventServer(runId, { port, maxBuffered });
   servers.push(s);
   return s;
 }
@@ -32,6 +32,33 @@ function collect(url: string, count: number, origin?: string): Promise<{ ws: Web
 
 const rep = { type: 'rep.started', rep: 1, t: 1 } as SummonEvent;
 const frame = { type: 'ghost.frame', ghostId: 'g', seq: 0, jpegBase64: 'AA==', t: 2 } as SummonEvent;
+const spawned = { type: 'ghost.spawned', ghostId: 'g', criterion: '3.2', persona: 'wraith', rep: 1, actor: 'a', t: 2 } as SummonEvent;
+const repDone = { type: 'rep.finished', rep: 1, outcomes: { completed: 1, timeout: 0, planError: 0, systemError: 0 }, t: 3 } as SummonEvent;
+const finished = { type: 'run.finished', runId: 'r1', counts: {}, haunted: [], durationMs: 1, t: 4 } as unknown as SummonEvent;
+const hello = { type: 'live.hello', protocol: 1, runId: 'r1' };
+
+/** Connects, then publishes `marker` and collects every message up to it. */
+async function lateJoin(s: EventServer, marker = finished): Promise<LiveMessage[]> {
+  const ws = new WebSocket(s.url);
+  const got: LiveMessage[] = [];
+  const done = new Promise<LiveMessage[]>((resolve) => {
+    ws.on('message', (data) => {
+      const m = JSON.parse(String(data)) as LiveMessage;
+      got.push(m);
+      if (m.type === marker.type) resolve(got);
+    });
+  });
+  await new Promise((r) => ws.on('open', r));
+  await until(() => got.length > 0);
+  s.publish(marker);
+  const out = await done;
+  ws.close();
+  return out;
+}
+
+async function until(fn: () => boolean) {
+  for (let i = 0; i < 200 && !fn(); i++) await new Promise((r) => setTimeout(r, 5));
+}
 
 describe('startEventServer', () => {
   it('binds to loopback on the run path', async () => {
@@ -41,10 +68,10 @@ describe('startEventServer', () => {
 
   it('broadcasts events to connected clients', async () => {
     const s = await start();
-    const c = await collect(s.url, 2);
+    const c = await collect(s.url, 3);
     s.publish(rep);
     s.publish(frame);
-    expect((await c.messages).map((e) => e.type)).toEqual(['rep.started', 'ghost.frame']);
+    expect((await c.messages).map((e) => e.type)).toEqual(['live.hello', 'rep.started', 'ghost.frame']);
     c.ws.close();
   });
 
@@ -52,9 +79,56 @@ describe('startEventServer', () => {
     const s = await start();
     s.publish(frame);
     s.publish(rep);
-    const c = await collect(s.url, 1);
-    expect((await c.messages).map((e) => e.type)).toEqual(['rep.started']);
+    const c = await collect(s.url, 2);
+    expect((await c.messages).map((e) => e.type)).toEqual(['live.hello', 'rep.started']);
     c.ws.close();
+  });
+
+  it('greets every client with the protocol version first', async () => {
+    const s = await start('r1');
+    const c = await collect(s.url, 1);
+    expect((await c.messages)[0]).toMatchObject(hello);
+    c.ws.close();
+  });
+
+  it('sends a late joiner the latest frame of each active ghost after the backlog', async () => {
+    const s = await start();
+    s.publish(rep);
+    s.publish(spawned);
+    s.publish(frame);
+    s.publish({ ...frame, seq: 1 } as SummonEvent);
+    const got = await lateJoin(s);
+    expect(got.map((m) => [m.type, m.type === 'ghost.frame' ? m.seq : null])).toEqual([
+      ['live.hello', null], ['rep.started', null], ['ghost.spawned', null], ['ghost.frame', 1], ['run.finished', null],
+    ]);
+  });
+
+  it('sends no frames of a finished rep to a late joiner', async () => {
+    const s = await start();
+    s.publish(spawned);
+    s.publish(frame);
+    s.publish(repDone);
+    const got = await lateJoin(s);
+    expect(got.map((m) => m.type)).toEqual(['live.hello', 'ghost.spawned', 'rep.finished', 'run.finished']);
+  });
+
+  it('drops frames, never other events, for a client over the buffer limit', async () => {
+    const s = await start('r1', 0, -1);
+    const ws = new WebSocket(s.url);
+    const got: LiveMessage[] = [];
+    const done = new Promise<void>((resolve) => ws.on('message', (d) => {
+      const m = JSON.parse(String(d)) as LiveMessage;
+      got.push(m);
+      if (m.type === 'run.finished') resolve();
+    }));
+    await new Promise((r) => ws.on('open', r));
+    await until(() => got.length > 0);
+    s.publish(spawned);
+    s.publish(frame);
+    s.publish(finished);
+    await done;
+    ws.close();
+    expect(got.map((m) => m.type)).toEqual(['live.hello', 'ghost.spawned', 'run.finished']);
   });
 
   it('refuses other paths', async () => {
