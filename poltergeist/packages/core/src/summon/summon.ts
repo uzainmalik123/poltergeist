@@ -69,7 +69,7 @@ export async function summon(opts: SummonOptions): Promise<SummonResult> {
   const startedAt = Date.now();
   const sink = createEventSink<SummonEvent>({ outDir: runDir, redactor: loaded.redactor, onEvent: opts.onEvent });
 
-  sink.emit({ type: 'run.started', runId, specDir, target, criteria: criteria.map((c) => c.id), personas, reps });
+  sink.emit({ type: 'run.started', runId, runDir, specDir, target, criteria: criteria.map((c) => c.id), personas, reps });
   const specHash = createHash('sha256').update(await readFile(join(specDir, 'requirements.md'))).digest('hex');
   const runJson: Record<string, unknown> = {
     runId, specDir, specHash, config: loaded.snapshot, model,

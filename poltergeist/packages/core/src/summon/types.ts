@@ -12,7 +12,7 @@ import type { CriterionVerdict, PairVerdict } from '../verdicts/types.js';
 export type SummonEvent =
   | RunEvent
   | ({ t: number } & (
-      | { type: 'run.started'; runId: string; specDir: string; target: string; criteria: string[]; personas: PersonaId[]; reps: number }
+      | { type: 'run.started'; runId: string; runDir: string; specDir: string; target: string; criteria: string[]; personas: PersonaId[]; reps: number }
       | { type: 'scout.route'; path: string; identity: string; status: RouteStatus }
       | { type: 'plan.compiled'; criterion: string; persona: PersonaId; status: PairResult['status']; cached: boolean }
       | { type: 'verdict.pair'; criterion: string; persona: PersonaId; verdict: PairVerdict; reason: string }
