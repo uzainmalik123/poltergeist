@@ -58,6 +58,7 @@
 | KI-47 | A `rehaunt` (subset) run rewrites `haunting-report.md`/`.json` with every other criterion as `notRun`, so the board loses the full picture | Minor | F14 | Open |
 | KI-48 | F11 review minors: `..foo` names rejected, a failed run isn't `isError`, missing config only fails in the background, misleading report errors (invalid JSON reads as missing; ids absent after a subset run read as unknown), unbounded `abortAll`, `capText` over its limit for tiny caps, missing server-level tests (retry after failure, absolute outside path), npm name `poltergeist-mcp` unreserved | Minor | F13, F14 | Open |
 | KI-49 | F12 Done-when on real Candy Swap (a 12-ghost run consumed live by Reanimator's R4 scene) not yet run: built against the claims fixture (D-40) | Major | F12 sign-off, R4 | Open |
+| KI-50 | F12 review minors: evidence prefers the first failing ghost even when only its partner has a frame, no `run.failed` event so an aborted run's live phase stays `running`, no test of a slow client draining and getting frames again, no subpath import test or lint rule keeping Node out of `core/src/live`, `LiveState` keeps every done ghost's JPEG, frames before `ghost.spawned` are ignored | Minor | F12, R4 | Open |
 
 ---
 
@@ -519,4 +520,12 @@
 ### KI-49: F12 Live Feed not yet checked on Candy Swap · Major · Open
 - **Context:** F12 was re-scoped to a headless Live Feed (D-40) and built against the claims fixture, because Candy Swap isn't built yet (KI-44).
 - **Next action:** once Candy Swap exists, run `poltergeist summon --seance` on it at 12 ghosts and fold the stream with `foldLive`. Check that frames keep up (≤ 4 fps × 12) without the backpressure dropping everything, and that every haunted line's evidence frame exists. Then wire it into Reanimator's R4 scene.
+
+### KI-50: F12 review minors · Minor · Open
+- **Context:** the final review of F12 (2026-11-02). Its Important findings were fixed before merge: late joiners now keep each ghost's latest frame in place (and failing ghosts' frames past `rep.finished`), so they fold the same evidence; `run.started` resets the state (D-40).
+- **Evidence ghost:** `verdict.criterion` picks the first failing ghost that exists, even if it has no frame and its pair partner (actor `b`) does. Prefer the first one with a frame.
+- **No `run.failed` event:** on an aborted or failed run, consumers' `phase` stays `running` (pre-existing F09 gap). R4 needs an end signal.
+- **Tests:** no test of a slow client going over the limit, draining and getting frames again; nothing imports `@poltergeist/core/live` through the subpath; nothing stops Node imports in `core/src/live` (an eslint `no-restricted-imports` scoped to that folder would).
+- **Memory:** `LiveState` keeps `jpegBase64` of every done ghost (a few MB per run). A renderer with history multiplies it; drop the payload from done, non-evidence ghosts if that bites.
+- **First frame:** `startFrames` starts before `ghost.spawned` is emitted, so a frame in that gap is ignored. Harmless (the next arrives within 1/fps); check during KI-49.
 

@@ -1,4 +1,4 @@
-import { UsageError, type LiveMessage, type SummonEvent } from '@poltergeist/core';
+import { foldLive, UsageError, type LiveMessage, type SummonEvent } from '@poltergeist/core';
 import { afterEach, describe, expect, it } from 'vitest';
 import WebSocket from 'ws';
 import { startEventServer, type EventServer } from '../src/seance-server.js';
@@ -91,7 +91,7 @@ describe('startEventServer', () => {
     c.ws.close();
   });
 
-  it('sends a late joiner the latest frame of each active ghost after the backlog', async () => {
+  it('sends a late joiner only the latest frame of each active ghost, in place', async () => {
     const s = await start();
     s.publish(rep);
     s.publish(spawned);
@@ -101,6 +101,22 @@ describe('startEventServer', () => {
     expect(got.map((m) => [m.type, m.type === 'ghost.frame' ? m.seq : null])).toEqual([
       ['live.hello', null], ['rep.started', null], ['ghost.spawned', null], ['ghost.frame', 1], ['run.finished', null],
     ]);
+  });
+
+  it('keeps a failing ghost\'s latest frame in place, so a late joiner folds the same evidence (review)', async () => {
+    const s = await start();
+    const events = [
+      spawned, frame, { ...frame, seq: 1 },
+      { type: 'assert.result', criterion: '3.2', persona: 'wraith', rep: 1, index: 0, ok: false, detail: 'twice', t: 3 },
+      repDone,
+      { type: 'verdict.criterion', criterion: '3.2', verdict: 'haunted', t: 4 },
+    ] as SummonEvent[];
+    for (const e of events) s.publish(e);
+    const got = await lateJoin(s);
+    expect(got.filter((m) => m.type === 'ghost.frame').map((m) => m.type === 'ghost.frame' && m.seq)).toEqual([1]);
+    const evidence = foldLive(got).lines.find((l) => l.id === '3.2')?.evidence;
+    expect(evidence).toEqual({ ghostId: 'g', frame: 'frames/g/00001.jpg' });
+    expect(evidence).toEqual(foldLive(events).lines.find((l) => l.id === '3.2')?.evidence);
   });
 
   it('sends no frames of a finished rep to a late joiner', async () => {

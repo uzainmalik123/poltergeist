@@ -21,8 +21,9 @@ export function reduceLive(s: LiveState, m: LiveMessage): LiveState {
     case 'live.hello':
       return { ...s, protocol: m.protocol, runId: m.runId };
     case 'run.started':
+      // A new run starts clean (a heal-loop rerun folded into the old state must not keep its ghosts).
       return {
-        ...s, phase: 'scouting', runId: m.runId, runDir: m.runDir, target: m.target, reps: m.reps,
+        ...initialLiveState(), protocol: s.protocol, phase: 'scouting', runId: m.runId, runDir: m.runDir, target: m.target, reps: m.reps,
         lines: m.criteria.map((id) => ({ id, status: 'waiting', failures: [] })),
       };
     case 'plan.compiled':

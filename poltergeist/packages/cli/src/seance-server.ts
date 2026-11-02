@@ -25,9 +25,10 @@ export type EventServer = { url: string; publish(e: SummonEvent): void; close():
 
 /**
  * `--seance` only (PRD F09/F12, D-36, D-40): broadcasts every event on `ws://127.0.0.1:<port>/runs/<runId>`.
- * Each client gets `live.hello` first; a late joiner then gets the non-frame events so far and the latest
- * frame of each ghost whose rep is still running, so `foldLive` reaches the same state. A slow client loses
- * frames, never other events. Loopback only; other paths are refused.
+ * Each client gets `live.hello` first, then (late joiners) the events so far with each ghost's latest frame kept
+ * in place, so `foldLive` reaches the same board and evidence. A finished rep's frames are dropped, except those
+ * of ghosts that failed an assertion (the haunted evidence). A slow client loses frames, never other events.
+ * Loopback only; other paths are refused.
  */
 export async function startEventServer(
   runId: string,
@@ -45,15 +46,19 @@ export async function startEventServer(
     });
   });
   const maxBuffered = opts.maxBuffered ?? MAX_BUFFERED;
-  const hello = JSON.stringify({ type: 'live.hello', protocol: LIVE_PROTOCOL, runId, t: Date.now() } satisfies LiveHello);
-  const backlog: string[] = [];
-  const ghostRep = new Map<string, number>();
-  const latestFrame = new Map<string, string>();
+  /** Every event so far; a ghost's superseded frames become holes, so the latest stays where it arrived. */
+  const backlog: (string | undefined)[] = [];
+  const ghosts = new Map<string, { criterion: string; persona: string; rep: number; failed: boolean }>();
+  const frameAt = new Map<string, number>();
+  const dropFrame = (ghostId: string) => {
+    const i = frameAt.get(ghostId);
+    if (i !== undefined) backlog[i] = undefined;
+    frameAt.delete(ghostId);
+  };
   wss.on('connection', (ws) => {
     ws.on('error', () => ws.terminate()); // a malformed frame from one client must not crash the run
-    ws.send(hello);
-    for (const line of backlog) ws.send(line);
-    for (const line of latestFrame.values()) ws.send(line);
+    ws.send(JSON.stringify({ type: 'live.hello', protocol: LIVE_PROTOCOL, runId, t: Date.now() } satisfies LiveHello));
+    for (const line of backlog) if (line !== undefined) ws.send(line);
   });
   const address = wss.address();
   const actual = typeof address === 'object' && address ? address.port : port;
@@ -63,15 +68,22 @@ export async function startEventServer(
       const line = JSON.stringify(e);
       const isFrame = e.type === 'ghost.frame';
       if (isFrame) {
-        if (ghostRep.has(e.ghostId)) latestFrame.set(e.ghostId, line);
+        if (ghosts.has(e.ghostId)) {
+          dropFrame(e.ghostId);
+          frameAt.set(e.ghostId, backlog.push(line) - 1);
+        }
       } else {
         backlog.push(line);
-        if (e.type === 'ghost.spawned') ghostRep.set(e.ghostId, e.rep);
+        if (e.type === 'ghost.spawned') ghosts.set(e.ghostId, { criterion: e.criterion, persona: e.persona, rep: e.rep, failed: false });
+        if (e.type === 'assert.result' && !e.ok) {
+          for (const g of ghosts.values()) if (g.criterion === e.criterion && g.persona === e.persona && g.rep === e.rep) g.failed = true;
+        }
         if (e.type === 'rep.finished') {
-          for (const [id, rep] of ghostRep) {
-            if (rep !== e.rep) continue;
-            ghostRep.delete(id);
-            latestFrame.delete(id);
+          for (const [id, g] of ghosts) {
+            if (g.rep !== e.rep) continue;
+            ghosts.delete(id);
+            if (g.failed) frameAt.delete(id); // keep its last frame for good: it may be the evidence
+            else dropFrame(id);
           }
         }
       }

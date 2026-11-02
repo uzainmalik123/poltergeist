@@ -136,6 +136,19 @@ describe('reduceLive', () => {
     expect(() => more.reduce(reduceLive, frozen)).not.toThrow();
   });
 
+  it('starts a new run from a clean state, keeping only the protocol (review)', () => {
+    const counts = { haunted: 1, flaky: 0, inconclusive: 0, clean: 1, notApplicable: 0, uncompilable: 0 };
+    const old = foldLive([
+      { type: 'live.hello', protocol: 1, runId: 'r0', t: 0 }, ...race,
+      { type: 'guard.blocked', t: 9, ghostId: G, reason: 'host', url: 'https://example.com/' },
+      { type: 'run.finished', t: 9, runId: 'r0', counts, haunted: ['3.2'], durationMs: 5 },
+    ]);
+    const s = reduceLive(old, { ...(started as Extract<LiveMessage, { type: 'run.started' }>), runId: 'r2', criteria: ['3.2'] });
+    expect(s).toMatchObject({ protocol: 1, runId: 'r2', phase: 'scouting', ghosts: {}, blocked: [], haunted: [] });
+    expect(s.counts).toBeUndefined();
+    expect(s.lines.map((l) => l.id)).toEqual(['3.2']);
+  });
+
   it('folds like a left reduce', () => {
     expect(foldLive(race)).toEqual(race.reduce(reduceLive, initialLiveState()));
   });

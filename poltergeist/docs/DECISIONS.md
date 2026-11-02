@@ -46,7 +46,7 @@
 | D-37 | F10 prep rulings (extends D-10, D-01): Kiro builds Candy Swap, we ship only a brief, its Poltergeist config and `npm run candy:check`; URL/script/seed contract; standalone package; bug-neutral prompt | Accepted |
 | D-38 | F11 MCP server rulings (extends D-36, D-01): five snake_case tools, long-poll runs (`waitMs` ≤ 100 s, `get_run_status`), one run per process, 6 000-char results, root-confined paths, `rehaunt` without diff until F14, SDK 1.32.2, fixture Done-when (KI-46) | Accepted |
 | D-39 | Poltergeist becomes the headless red-team **engine inside Reanimator**; the entry is Reanimator/Frankenstein; standalone UI (F12 Séance) and costume (F26) are deprioritised | Accepted |
-| D-40 | F12 re-scoped to a headless **Live Feed** for Reanimator (extends D-39, D-36): pure `reduceLive`/`foldLive` → `LiveState` in `@poltergeist/core/live`, `live.hello` protocol 1, late joiners get backlog + latest frame per active ghost, frame-only backpressure at 1 MiB, `run.started.runDir`; no React Séance | Accepted |
+| D-40 | F12 re-scoped to a headless **Live Feed** for Reanimator (extends D-39, D-36): pure `reduceLive`/`foldLive` → `LiveState` in `@poltergeist/core/live`, `live.hello` protocol 1, late joiners get the backlog with latest frames in place, frame-only backpressure at 1 MiB, `run.started.runDir`; no React Séance | Accepted |
 
 ---
 
@@ -566,7 +566,8 @@
     - Ghost tiles: persona, criterion, rep, actor, step, step index, outcome, cursor x/y, latest frame, `done` after `rep.finished`. Guard blocks, counts and haunted ids are kept too.
     - A verdict for a criterion it never saw adds a line instead of being dropped.
   - **Wire protocol:** `LIVE_PROTOCOL = 1`. The `--seance` server's first message to each client is `{type: 'live.hello', protocol, runId, t}`.
-  - **Late joiners** get hello, the non-frame backlog, then the latest frame of each ghost whose rep hasn't finished, so their `foldLive` matches a client that was there from the start.
+  - **Late joiners** get hello, then the events so far with each ghost's latest frame kept in place (where it arrived), so their `foldLive` reaches the same board and evidence as a client that was there from the start. A finished rep's frames are dropped, except those of ghosts that failed an assertion (review fix).
+  - **`run.started` resets the state** (keeping only `protocol`), so a heal-loop rerun folded into an old state starts clean (review fix).
   - **Backpressure (KI-43):** a client with `bufferedAmount` > 1 MiB is sent no `ghost.frame` until it drains; other events are never dropped.
   - **`run.started` carries `runDir`** (absolute), so evidence paths resolve.
   - Requirement 11.1–11.3 are reworded for `Live_Feed`; 11.4 (replay, F15) is unchanged.
